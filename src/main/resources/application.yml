@@ -60,9 +60,9 @@ app:
     facturas-path: ${STORAGE_PATH:./storage}/facturas
     recibos-path: ${STORAGE_PATH:./storage}/recibos
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-origins: ${CORS_ORIGINS:https://acueducto-los-guaduales.pages.dev,https://acueducto-losguaduales-server.onrender.com,http://localhost:3000,http://localhost:5173}
   qr:
-    base-url: ${QR_BASE_URL:https://acueductolosguaduales.example.com}
+    base-url: ${QR_BASE_URL:https://acueducto-los-guaduales.pages.dev}
     # Mientras se define el dominio definitivo del frontend, los QR se generan con esta URL base.
     # Ejemplos de destino final:
     #   {base-url}/factura/{numero}

@@ -30,10 +30,11 @@ import org.springframework.context.annotation.Configuration;
                         2. Copie el 'accessToken' de la respuesta.
                         3. Haga clic en 'Authorize' (arriba a la derecha) y pegue el token (sin la palabra Bearer).
                         """,
-                contact = @Contact(name = "Acueducto Los Guaduales", email = "sistemas@acueductolosguaduales.example.com")
+                contact = @Contact(name = "Acueducto Los Guaduales", email = "sistemas@acueductolosguaduales.com")
         ),
         servers = {
-                @Server(url = "http://localhost:8080", description = "Servidor local")
+                @Server(url = "http://localhost:8080", description = "Servidor local"),
+                @Server(url = "https://acueducto-losguaduales-server.onrender.com", description = "Servidor Render")
         }
 )
 @SecurityScheme(

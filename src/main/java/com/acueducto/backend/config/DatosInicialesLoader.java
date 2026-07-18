@@ -51,7 +51,7 @@ public class DatosInicialesLoader implements CommandLineRunner {
                 .nombreAcueducto("Acueducto Los Guaduales")
                 .direccion("Vereda Los Guaduales")
                 .telefonoPrincipal("000-000-0000")
-                .correo("contacto@acueductolosguaduales.example.com")
+                .correo("contacto@acueductolosguaduales.com")
                 .municipio("Municipio")
                 .departamento("Departamento")
                 .valorM3(BigDecimal.valueOf(1500))
@@ -81,7 +81,7 @@ public class DatosInicialesLoader implements CommandLineRunner {
         Usuario admin = Usuario.builder()
                 .username("admin")
                 .password(passwordEncoder.encode("Admin#2026"))
-                .email("admin@acueductolosguaduales.example.com")
+                .email("admin@acueductolosguaduales.com")
                 .rol(Rol.ADMINISTRADOR)
                 .activo(true)
                 .build();
