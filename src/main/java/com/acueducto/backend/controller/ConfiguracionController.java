@@ -29,7 +29,6 @@ public class ConfiguracionController {
     private final ConfiguracionService configuracionService;
 
     @Operation(summary = "Consultar configuracion actual")
-    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
     @GetMapping
     public ResponseEntity<ConfiguracionResponse> obtener() {
         return ResponseEntity.ok(configuracionService.obtener());
