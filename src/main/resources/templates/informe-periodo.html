@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Informe ' + ${informe.tipoInforme} + ' - ' + ${informe.tituloPeriodo}">Informe</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a1a; }
+        .encabezado { display: table; width: 100%; margin-bottom: 20px; border-bottom: 3px solid #1565c0; padding-bottom: 10px; }
+        .encabezado .logo { display: table-cell; width: 100px; vertical-align: middle; }
+        .encabezado .logo img { max-width: 90px; max-height: 90px; }
+        .encabezado .datos { display: table-cell; vertical-align: middle; padding-left: 15px; }
+        .encabezado .datos h1 { font-size: 18px; margin: 0 0 4px 0; color: #1565c0; }
+        .titulo-informe { text-align: center; margin: 15px 0 20px 0; }
+        .titulo-informe h2 { margin: 0; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; }
+        .titulo-informe .periodo { font-size: 22px; font-weight: bold; color: #1565c0; margin-top: 4px; }
+        .titulo-informe .fecha-generacion { font-size: 10px; color: #777; margin-top: 4px; }
+        .seccion { margin-bottom: 18px; }
+        .seccion-titulo { background-color: #e3f2fd; padding: 5px 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #1565c0; }
+        .indicadores { display: table; width: 100%; margin-top: 10px; border-spacing: 8px 0; }
+        .indicador { display: table-cell; width: 25%; text-align: center; background-color: #fafafa; border: 1px solid #eee; border-radius: 6px; padding: 10px 4px; }
+        .indicador .valor { font-size: 16px; font-weight: bold; color: #1565c0; }
+        .indicador .etiqueta { font-size: 9px; color: #777; text-transform: uppercase; margin-top: 3px; }
+        .indicador.ok .valor { color: #2e7d32; }
+        .indicador.alerta .valor { color: #c62828; }
+        table.datos-tabla { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        table.datos-tabla td { padding: 4px 8px; border: 1px solid #ddd; }
+        table.datos-tabla td.etiqueta { font-weight: bold; background-color: #fafafa; width: 40%; }
+        table.detalle { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 10.5px; }
+        table.detalle th { background-color: #1565c0; color: #fff; padding: 5px 7px; text-align: left; font-size: 10px; }
+        table.detalle td { padding: 5px 7px; border-bottom: 1px solid #eee; }
+        table.detalle tr:nth-child(even) { background-color: #fafafa; }
+        .estado-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; color: #fff; font-weight: bold; font-size: 9px; }
+        .estado-PENDIENTE { background-color: #f9a825; } .estado-PAGADA { background-color: #2e7d32; }
+        .estado-PAGADA_PARCIAL { background-color: #ef6c00; } .estado-VENCIDA { background-color: #c62828; }
+        .estado-ANULADA { background-color: #757575; } .tipo-ENTRADA { color: #2e7d32; font-weight: bold; }
+        .tipo-SALIDA { color: #c62828; font-weight: bold; }
+        .pie { margin-top: 25px; font-size: 10px; color: #666; text-align: center; }
+        .firmas { display: table; width: 100%; margin-top: 40px; }
+        .firmas .firma { display: table-cell; width: 50%; text-align: center; }
+        .firmas img { max-width: 140px; max-height: 55px; }
+        .firmas .linea { border-top: 1px solid #333; margin-top: 40px; padding-top: 4px; width: 70%; margin-left: auto; margin-right: auto; }
+    </style>
+</head>
+<body>
+
+<div class="encabezado">
+    <div class="logo">
+        <img th:if="${logoSrc}" th:src="${logoSrc}" th:width="${logoAncho}" th:height="${logoAlto}" alt="Logo"/>
+    </div>
+    <div class="datos">
+        <h1 th:text="${config.nombreAcueducto}">Acueducto Los Guaduales</h1>
+        <div th:text="${config.direccion}">Direccion</div>
+        <div>
+            <span th:text="'Tel: ' + ${config.telefonoPrincipal}">Tel</span>
+            <span th:if="${config.nit}" th:text="' | NIT: ' + ${config.nit}"></span>
+        </div>
+    </div>
+</div>
+
+<div class="titulo-informe">
+    <h2 th:text="'Informe ' + ${informe.tipoInforme} + ' de Gestion'">Informe</h2>
+    <div class="periodo" th:text="${informe.tituloPeriodo}">Julio 2026</div>
+    <div class="fecha-generacion" th:text="'Generado el ' + ${informe.fechaGeneracion}"></div>
+</div>
+
+<div class="seccion">
+    <div class="seccion-titulo">Resumen de Tesoreria</div>
+    <div class="indicadores">
+        <div class="indicador ok"><div class="valor" th:text="'$' + ${informe.totalIngresos}"></div><div class="etiqueta">Total Ingresos</div></div>
+        <div class="indicador alerta"><div class="valor" th:text="'$' + ${informe.totalGastos}"></div><div class="etiqueta">Total Gastos</div></div>
+        <div class="indicador"><div class="valor" th:text="'$' + ${informe.balance}"></div><div class="etiqueta">Balance</div></div>
+        <div class="indicador"><div class="valor" th:text="'$' + ${informe.totalMultas}"></div><div class="etiqueta">Total Multas (<span th:text="${informe.numeroMultas}"></span>)</div></div>
+    </div>
+</div>
+
+<div class="seccion">
+    <div class="seccion-titulo">Resumen de Facturacion</div>
+    <div class="indicadores">
+        <div class="indicador"><div class="valor" th:text="${informe.facturasGeneradas}"></div><div class="etiqueta">Facturas Generadas</div></div>
+        <div class="indicador ok"><div class="valor" th:text="${informe.facturasPagadas}"></div><div class="etiqueta">Pagadas</div></div>
+        <div class="indicador"><div class="valor" th:text="${informe.facturasPendientes}"></div><div class="etiqueta">Pendientes</div></div>
+        <div class="indicador alerta"><div class="valor" th:text="${informe.facturasVencidas}"></div><div class="etiqueta">Vencidas</div></div>
+    </div>
+    <table class="datos-tabla" style="margin-top:12px;">
+        <tr>
+            <td class="etiqueta">Total facturado</td>
+            <td th:text="'$' + ${informe.totalFacturado}"></td>
+            <td class="etiqueta">Total recaudado</td>
+            <td th:text="'$' + ${informe.totalRecaudadoFacturas}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Consumo total (m3)</td>
+            <td th:text="${informe.totalM3Consumidos} + ' m3'"></td>
+            <td class="etiqueta">Promedio de consumo</td>
+            <td th:text="${#numbers.formatDecimal(informe.promedioConsumoM3, 1, 1)} + ' m3'"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Asociados activos</td>
+            <td th:text="${informe.asociadosActivos}"></td>
+            <td class="etiqueta">Asociados suspendidos</td>
+            <td th:text="${informe.asociadosSuspendidos}"></td>
+        </tr>
+    </table>
+</div>
+
+<div class="seccion" th:if="${not #lists.isEmpty(informe.facturas)}">
+    <div class="seccion-titulo">Detalle de Facturas del Periodo</div>
+    <table class="detalle">
+        <thead>
+        <tr><th>Numero</th><th>Asociado</th><th>Fecha</th><th>Estado</th><th style="text-align:right;">Total</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="f : ${informe.facturas}">
+            <td th:text="${f.numeroFactura}"></td>
+            <td th:text="${f.asociadoNombre}"></td>
+            <td th:text="${f.fechaEmision}"></td>
+            <td><span th:class="'estado-badge estado-' + ${f.estado}" th:text="${f.estado}"></span></td>
+            <td style="text-align:right;" th:text="'$' + ${f.total}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="seccion" th:if="${not #lists.isEmpty(informe.movimientos)}">
+    <div class="seccion-titulo">Detalle de Movimientos de Tesoreria</div>
+    <table class="detalle">
+        <thead>
+        <tr><th>Numero</th><th>Tipo</th><th>Concepto</th><th>Fecha</th><th style="text-align:right;">Valor</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${informe.movimientos}">
+            <td th:text="${m.numero}"></td>
+            <td><span th:class="'tipo-' + ${m.tipo}" th:text="${m.tipo}"></span></td>
+            <td th:text="${m.concepto}"></td>
+            <td th:text="${m.fecha}"></td>
+            <td style="text-align:right;" th:text="'$' + ${m.valor}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="firmas">
+    <div class="firma">
+        <img th:if="${firmaSrc}" th:src="${firmaSrc}" th:width="${firmaAncho}" th:height="${firmaAlto}" alt="Firma"/>
+        <div class="linea">Firma del Tesorero / Administrador</div>
+    </div>
+    <div class="firma">
+        <img th:if="${selloSrc}" th:src="${selloSrc}" th:width="${selloAncho}" th:height="${selloAlto}" alt="Sello"/>
+        <div class="linea">Sello oficial</div>
+    </div>
+</div>
+
+<div class="pie">
+    <p>Informe generado electronicamente por el Sistema Integral de Gestion del Acueducto Los Guaduales.</p>
+</div>
+
+</body>
+</html>

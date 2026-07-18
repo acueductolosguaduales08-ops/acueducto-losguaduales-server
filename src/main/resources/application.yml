@@ -1,0 +1,122 @@
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: acueducto-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/acueducto_guaduales}}
+    username: ${DB_USER:${DATABASE_USERNAME:postgres}}
+    password: ${DB_PASSWORD:${DATABASE_PASSWORD:postgres}}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: America/Bogota
+    open-in-view: true
+
+  flyway:
+    enabled: false
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:CambiarEsteSecretoEnProduccion123456789012345678901234567890}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}          # 24 horas - access token
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 dias - refresh token
+  storage:
+    base-path: ${STORAGE_PATH:./storage}
+    config-path: ${STORAGE_PATH:./storage}/config
+    publicaciones-path: ${STORAGE_PATH:./storage}/publicaciones
+    facturas-path: ${STORAGE_PATH:./storage}/facturas
+    recibos-path: ${STORAGE_PATH:./storage}/recibos
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+  qr:
+    base-url: ${QR_BASE_URL:https://acueductolosguaduales.example.com}
+    # Mientras se define el dominio definitivo del frontend, los QR se generan con esta URL base.
+    # Ejemplos de destino final:
+    #   {base-url}/factura/{numero}
+    #   {base-url}/recibo/{numero}
+    #   {base-url}/formulario/{codigo}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    disable-swagger-default-url: true
+  default-produces-media-type: application/json
+
+logging:
+  level:
+    com.acueducto.backend: DEBUG
+    org.springframework.security: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  flyway:
+    enabled: false
+  datasource:
+    url: jdbc:h2:mem:acueducto;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  flyway:
+    enabled: false
+logging:
+  level:
+    com.acueducto.backend: INFO
+    org.springframework.security: WARN

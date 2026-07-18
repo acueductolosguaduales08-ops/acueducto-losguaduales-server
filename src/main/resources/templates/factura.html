@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Factura ' + ${factura.numeroFactura}">Factura</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a1a; }
+        .encabezado { display: table; width: 100%; margin-bottom: 20px; border-bottom: 3px solid #1565c0; padding-bottom: 10px; }
+        .encabezado .logo { display: table-cell; width: 100px; vertical-align: middle; }
+        .encabezado .logo img { max-width: 90px; max-height: 90px; }
+        .encabezado .datos { display: table-cell; vertical-align: middle; padding-left: 15px; }
+        .encabezado .datos h1 { font-size: 18px; margin: 0 0 4px 0; color: #1565c0; }
+        .encabezado .qr { display: table-cell; width: 90px; text-align: right; vertical-align: middle; }
+        .encabezado .qr img { width: 80px; height: 80px; }
+        .titulo-factura { text-align: center; margin: 15px 0; }
+        .titulo-factura h2 { margin: 0; font-size: 16px; letter-spacing: 1px; }
+        .titulo-factura .numero { font-size: 20px; font-weight: bold; color: #1565c0; }
+        .seccion { margin-bottom: 15px; }
+        .seccion-titulo { background-color: #e3f2fd; padding: 5px 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        table.datos-tabla { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        table.datos-tabla td { padding: 4px 8px; border: 1px solid #ddd; }
+        table.datos-tabla td.etiqueta { font-weight: bold; background-color: #fafafa; width: 35%; }
+        table.cobros { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.cobros th { background-color: #1565c0; color: #fff; padding: 6px 8px; text-align: left; font-size: 11px; }
+        table.cobros td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+        table.cobros tr.total td { font-weight: bold; font-size: 14px; border-top: 2px solid #1565c0; }
+        .estado-badge { display: inline-block; padding: 3px 10px; border-radius: 3px; color: #fff; font-weight: bold; font-size: 11px; }
+        .estado-PENDIENTE { background-color: #f9a825; }
+        .estado-PAGADA { background-color: #2e7d32; }
+        .estado-PAGADA_PARCIAL { background-color: #ef6c00; }
+        .estado-VENCIDA { background-color: #c62828; }
+        .estado-ANULADA { background-color: #757575; }
+        .pie { margin-top: 30px; font-size: 10px; color: #666; text-align: center; }
+        .firmas { display: table; width: 100%; margin-top: 40px; }
+        .firmas .firma { display: table-cell; width: 50%; text-align: center; }
+        .firmas img { max-width: 140px; max-height: 55px; }
+        .firmas .linea { border-top: 1px solid #333; margin-top: 40px; padding-top: 4px; width: 70%; margin-left: auto; margin-right: auto; }
+    </style>
+</head>
+<body>
+
+<div class="encabezado">
+    <div class="logo">
+        <img th:if="${logoSrc}" th:src="${logoSrc}" th:width="${logoAncho}" th:height="${logoAlto}" alt="Logo"/>
+    </div>
+    <div class="datos">
+        <h1 th:text="${config.nombreAcueducto}">Acueducto Los Guaduales</h1>
+        <div th:text="${config.direccion}">Direccion</div>
+        <div>
+            <span th:text="'Tel: ' + ${config.telefonoPrincipal}">Tel</span>
+            <span th:if="${config.nit}" th:text="' | NIT: ' + ${config.nit}"></span>
+        </div>
+        <div th:text="${config.correo}">Correo</div>
+    </div>
+    <div class="qr">
+        <img th:if="${factura.codigoQr}" th:src="${factura.codigoQr}" alt="QR"/>
+    </div>
+</div>
+
+<div class="titulo-factura">
+    <h2>FACTURA DE COBRO DEL SERVICIO DE ACUEDUCTO</h2>
+    <div class="numero" th:text="${factura.numeroFactura}">FAC-000001</div>
+    <span th:class="'estado-badge estado-' + ${factura.estado}" th:text="${factura.estado}">PENDIENTE</span>
+</div>
+
+<div class="seccion">
+    <div class="seccion-titulo">Informacion del Asociado</div>
+    <table class="datos-tabla">
+        <tr>
+            <td class="etiqueta">Codigo interno</td>
+            <td th:text="${asociado.codigoInterno}"></td>
+            <td class="etiqueta">Documento</td>
+            <td th:text="${asociado.tipoDocumento} + ' ' + ${asociado.documento}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Nombre completo</td>
+            <td colspan="3" th:text="${asociado.nombres} + ' ' + ${asociado.apellidos}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Direccion</td>
+            <td colspan="3" th:text="${asociado.direccion}"></td>
+        </tr>
+    </table>
+</div>
+
+<div class="seccion">
+    <div class="seccion-titulo">Informacion del Periodo</div>
+    <table class="datos-tabla">
+        <tr>
+            <td class="etiqueta">Fecha de emision</td>
+            <td th:text="${factura.fechaEmision}"></td>
+            <td class="etiqueta">Fecha limite de pago</td>
+            <td th:text="${factura.fechaLimitePago}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Lectura anterior</td>
+            <td th:text="${factura.lecturaAnterior}"></td>
+            <td class="etiqueta">Lectura actual</td>
+            <td th:text="${factura.lecturaActual}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Consumo (m3)</td>
+            <td colspan="3" th:text="${factura.consumoM3} + ' m3'"></td>
+        </tr>
+    </table>
+</div>
+
+<div class="seccion">
+    <div class="seccion-titulo">Detalle de Cobros</div>
+    <table class="cobros">
+        <thead>
+        <tr>
+            <th>Concepto</th>
+            <th style="text-align:right;">Valor</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Consumo de agua (<span th:text="${factura.consumoM3}"></span> m3 x $<span th:text="${factura.valorM3}"></span>)</td>
+            <td style="text-align:right;" th:text="'$' + ${factura.valorConsumo}"></td>
+        </tr>
+        <tr>
+            <td>Cargo fijo de administracion</td>
+            <td style="text-align:right;" th:text="'$' + ${factura.cargoAdministracion}"></td>
+        </tr>
+        <tr th:if="${factura.totalMultas != null and factura.totalMultas.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+            <td>Multas pendientes</td>
+            <td style="text-align:right;" th:text="'$' + ${factura.totalMultas}"></td>
+        </tr>
+        <tr th:each="concepto : ${conceptos}">
+            <td th:text="${concepto.descripcion}"></td>
+            <td style="text-align:right;" th:text="'$' + ${concepto.valor}"></td>
+        </tr>
+        <tr class="total">
+            <td>TOTAL A PAGAR</td>
+            <td style="text-align:right;" th:text="'$' + ${factura.total}"></td>
+        </tr>
+        <tr th:if="${factura.totalPagado != null and factura.totalPagado.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+            <td>Total pagado</td>
+            <td style="text-align:right;" th:text="'$' + ${factura.totalPagado}"></td>
+        </tr>
+        <tr th:if="${factura.totalPagado != null and factura.totalPagado.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+            <td><b>Saldo pendiente</b></td>
+            <td style="text-align:right;"><b th:text="'$' + ${factura.saldoPendiente}"></b></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="seccion" th:if="${config.banco}">
+    <div class="seccion-titulo">Informacion Bancaria para Pagos</div>
+    <table class="datos-tabla">
+        <tr>
+            <td class="etiqueta">Banco</td>
+            <td th:text="${config.banco}"></td>
+            <td class="etiqueta">Tipo de cuenta</td>
+            <td th:text="${config.tipoCuenta}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Numero de cuenta</td>
+            <td th:text="${config.numeroCuenta}"></td>
+            <td class="etiqueta">Titular</td>
+            <td th:text="${config.titularCuenta}"></td>
+        </tr>
+    </table>
+</div>
+
+<div class="firmas">
+    <div class="firma">
+        <img th:if="${firmaSrc}" th:src="${firmaSrc}" th:width="${firmaAncho}" th:height="${firmaAlto}" alt="Firma"/>
+        <div class="linea">Firma autorizada</div>
+    </div>
+    <div class="firma">
+        <img th:if="${selloSrc}" th:src="${selloSrc}" th:width="${selloAncho}" th:height="${selloAlto}" alt="Sello"/>
+        <div class="linea">Sello oficial</div>
+    </div>
+</div>
+
+<div class="pie">
+    <p th:if="${config.notasFactura}" th:text="${config.notasFactura}"></p>
+    <p>Documento generado electronicamente por el Sistema Integral de Gestion del Acueducto Los Guaduales.</p>
+</div>
+
+</body>
+</html>

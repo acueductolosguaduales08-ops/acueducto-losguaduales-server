@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Recibo ' + ${recibo.numeroRecibo}">Recibo</title>
+    <style>
+        @page { size: A5; margin: 1.5cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a1a; }
+        .encabezado { display: table; width: 100%; margin-bottom: 15px; border-bottom: 3px solid #2e7d32; padding-bottom: 8px; }
+        .encabezado .logo { display: table-cell; width: 80px; vertical-align: middle; }
+        .encabezado .logo img { max-width: 70px; max-height: 70px; }
+        .encabezado .datos { display: table-cell; vertical-align: middle; padding-left: 12px; }
+        .encabezado .datos h1 { font-size: 15px; margin: 0 0 3px 0; color: #2e7d32; }
+        .titulo-recibo { text-align: center; margin: 12px 0; }
+        .titulo-recibo h2 { margin: 0; font-size: 14px; letter-spacing: 1px; }
+        .titulo-recibo .numero { font-size: 18px; font-weight: bold; color: #2e7d32; }
+        table.datos-tabla { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        table.datos-tabla td { padding: 4px 8px; border: 1px solid #ddd; }
+        table.datos-tabla td.etiqueta { font-weight: bold; background-color: #fafafa; width: 40%; }
+        .valor-recibido { text-align: center; margin: 18px 0; padding: 12px; background-color: #e8f5e9; border-radius: 4px; }
+        .valor-recibido .monto { font-size: 24px; font-weight: bold; color: #2e7d32; }
+        .qr { text-align: center; margin-top: 15px; }
+        .qr img { width: 90px; height: 90px; }
+        .pie { margin-top: 20px; font-size: 10px; color: #666; text-align: center; }
+        .estado-badge { display: inline-block; padding: 3px 10px; border-radius: 3px; color: #fff; font-weight: bold; font-size: 11px; }
+        .estado-EMITIDO { background-color: #2e7d32; }
+        .estado-ANULADO { background-color: #c62828; }
+    </style>
+</head>
+<body>
+
+<div class="encabezado">
+    <div class="logo">
+        <img th:if="${logoSrc}" th:src="${logoSrc}" th:width="${logoAncho}" th:height="${logoAlto}" alt="Logo"/>
+    </div>
+    <div class="datos">
+        <h1 th:text="${config.nombreAcueducto}">Acueducto Los Guaduales</h1>
+        <div th:text="${config.direccion}">Direccion</div>
+        <div th:text="'Tel: ' + ${config.telefonoPrincipal}">Tel</div>
+    </div>
+</div>
+
+<div class="titulo-recibo">
+    <h2>RECIBO DE PAGO</h2>
+    <div class="numero" th:text="${recibo.numeroRecibo}">REC-000001</div>
+    <span th:class="'estado-badge estado-' + ${recibo.estado}" th:text="${recibo.estado}">EMITIDO</span>
+</div>
+
+<table class="datos-tabla">
+    <tr>
+        <td class="etiqueta">Fecha de emision</td>
+        <td th:text="${recibo.fechaEmision}"></td>
+    </tr>
+    <tr>
+        <td class="etiqueta">Asociado</td>
+        <td th:text="${asociado.nombres} + ' ' + ${asociado.apellidos}"></td>
+    </tr>
+    <tr>
+        <td class="etiqueta">Documento</td>
+        <td th:text="${asociado.tipoDocumento} + ' ' + ${asociado.documento}"></td>
+    </tr>
+    <tr>
+        <td class="etiqueta">Factura relacionada</td>
+        <td th:text="${factura.numeroFactura}"></td>
+    </tr>
+    <tr>
+        <td class="etiqueta">Metodo de pago</td>
+        <td th:text="${pago.metodoPago.nombre}"></td>
+    </tr>
+    <tr>
+        <td class="etiqueta">Recibido por</td>
+        <td th:text="${pago.tesorero.username}"></td>
+    </tr>
+</table>
+
+<div class="valor-recibido">
+    <div>Valor recibido</div>
+    <div class="monto" th:text="'$' + ${recibo.valor}"></div>
+</div>
+
+<table class="datos-tabla" th:if="${recibo.saldoPendiente != null and recibo.saldoPendiente.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+    <tr>
+        <td class="etiqueta">Saldo pendiente de la factura</td>
+        <td th:text="'$' + ${recibo.saldoPendiente}"></td>
+    </tr>
+</table>
+
+<div class="qr">
+    <img th:if="${recibo.codigoQr}" th:src="${recibo.codigoQr}" alt="QR"/>
+</div>
+
+<div class="pie">
+    <p>Documento generado electronicamente por el Sistema Integral de Gestion del Acueducto Los Guaduales.</p>
+</div>
+
+</body>
+</html>
