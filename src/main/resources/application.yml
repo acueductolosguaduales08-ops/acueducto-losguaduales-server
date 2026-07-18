@@ -67,7 +67,7 @@ app:
     # Ejemplos de destino final:
     #   {base-url}/factura/{numero}
     #   {base-url}/recibo/{numero}
-    #   {base-url}/formulario/{codigo}
+    #   {base-url}/encuestas?codigo={codigo}
 
 springdoc:
   api-docs:

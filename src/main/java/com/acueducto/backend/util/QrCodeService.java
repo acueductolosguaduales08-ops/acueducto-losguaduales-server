@@ -35,7 +35,7 @@ public class QrCodeService {
     }
 
     public String generarQrFormulario(String codigoFormulario) {
-        return generarQrBase64(baseUrl + "/formulario/" + codigoFormulario);
+        return generarQrBase64(baseUrl + "/encuestas?codigo=" + codigoFormulario);
     }
 
     /** Genera un QR a partir de cualquier contenido y lo retorna como PNG codificado en Base64 (data URI). */
