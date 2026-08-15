@@ -23,7 +23,8 @@ esperado y notas específicas para la UI donde aplica.
 10. [Formularios: configuración general al crear](#10-formularios-configuración-general-al-crear)
 11. [Infraestructura: Render + Supabase](#11-infraestructura-render--supabase)
 12. [Portal Público: eliminación definitiva de etiquetas](#12-portal-público-eliminación-definitiva-de-etiquetas)
-13. [Tabla resumen de endpoints nuevos/modificados](#13-tabla-resumen-de-endpoints-nuevosmodificados)
+13. [Corrección: 500 en configuracion/hero por columnas faltantes](#13-corrección-500-en-configuracionhero-por-columnas-faltantes)
+14. [Tabla resumen de endpoints nuevos/modificados](#14-tabla-resumen-de-endpoints-nuevosmodificados)
 
 ---
 
@@ -406,7 +407,39 @@ confirmación habitual antes de llamar al endpoint (borrado permanente e irrever
 
 ---
 
-## 13. Tabla resumen de endpoints nuevos/modificados
+## 13. Corrección: 500 en configuracion/hero por columnas faltantes
+
+**Síntoma:** algunas funciones devolvían `500` con "Ocurrió un error inesperado" — en concreto
+`GET /configuracion`, `GET /configuracion/hero/actual` y las consultas sobre multas. En los logs
+de Render aparecía:
+
+```
+ERROR: column c1_0.modo_hero does not exist
+SQLState: 42703
+```
+
+**Causa:** el proyecto usa `spring.jpa.hibernate.ddl-auto=update`, que **no puede agregar una
+columna `NOT NULL` a una tabla que ya tiene filas** (la base la rechaza sin un valor por defecto).
+Por eso columnas agregadas en rondas posteriores (`configuracion.modo_hero`,
+`configuracion.hero_rotacion_actual_id`, `configuracion.hero_rotacion_desde`,
+`configuracion.auditoria_activa`, `multa.independiente`) quedaron ausentes en la base de
+producción, y cualquier `SELECT` que las incluyera fallaba con 500.
+
+**Solución (no requiere tocar la base a mano):** se agregó `ConfiguracionSchemaMigrator`, un
+componente que corre en cada arranque **después** de que Hibernate actualiza el esquema y hace lo
+siguiente de forma idempotente y segura (funciona en H2 dev y PostgreSQL prod):
+
+1. Agrega las columnas faltantes con `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+2. Rellena las filas existentes con el valor por defecto de la entidad (ej. `modo_hero='UNICO'`,
+   `auditoria_activa=TRUE`, `independiente=FALSE`).
+3. Aplica `NOT NULL` solo a las columnas que la entidad declara como tal.
+
+Al desplegar esta versión, el backend repara solo el esquema en el primer arranque y las funciones
+vuelven a responder normalmente. No hay que ejecutar nada manual.
+
+---
+
+## 14. Tabla resumen de endpoints nuevos/modificados
 
 | Método | Ruta | Novedad |
 |---|---|---|
