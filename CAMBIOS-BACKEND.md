@@ -22,7 +22,8 @@ esperado y notas específicas para la UI donde aplica.
 9. [Formularios: programación automática y manual](#9-formularios-programación-automática-y-manual)
 10. [Formularios: configuración general al crear](#10-formularios-configuración-general-al-crear)
 11. [Infraestructura: Render + Supabase](#11-infraestructura-render--supabase)
-12. [Tabla resumen de endpoints nuevos/modificados](#12-tabla-resumen-de-endpoints-nuevosmodificados)
+12. [Portal Público: eliminación definitiva de etiquetas](#12-portal-público-eliminación-definitiva-de-etiquetas)
+13. [Tabla resumen de endpoints nuevos/modificados](#13-tabla-resumen-de-endpoints-nuevosmodificados)
 
 ---
 
@@ -385,7 +386,27 @@ ni cambiar yo directamente.
 
 ---
 
-## 12. Tabla resumen de endpoints nuevos/modificados
+## 12. Portal Público: eliminación definitiva de etiquetas
+
+Dentro del Portal Público (módulo 11/12: galería, publicaciones destacadas, categorías, etiquetas
+y videos) ya se podían crear y listar etiquetas, pero **no eliminarlas**. Ahora se agrega el
+borrado **definitivo**:
+
+`DELETE /publicaciones/etiquetas/{id}` — Admin o Tesorero.
+
+- Borra la etiqueta de inmediato y para siempre.
+- Antes de borrarla, la **desvincula de todas las publicaciones** que la usan (limpia la tabla
+  intermedia), así ninguna publicación queda apuntando a una etiqueta inexistente.
+- Cada eliminación queda registrada en auditoría (`ELIMINAR_ETIQUETA`).
+
+### Para el frontend
+
+En la pantalla de administración de etiquetas, agregar un botón de eliminar por etiqueta, con la
+confirmación habitual antes de llamar al endpoint (borrado permanente e irreversible).
+
+---
+
+## 13. Tabla resumen de endpoints nuevos/modificados
 
 | Método | Ruta | Novedad |
 |---|---|---|
@@ -417,6 +438,7 @@ ni cambiar yo directamente.
 | `GET` | `/encuestas/{id}` | Modificado — bloquea vista sin sesión si `requiereAutenticacion` |
 | `GET` | `/encuestas/codigo/{codigo}` | Modificado — idem |
 | `POST` | `/encuestas/{id}/responder` | Modificado — ahora valida opción única/múltiple (antes no se validaba nada) |
+| `DELETE` | `/publicaciones/etiquetas/{id}` | Nuevo — eliminación definitiva de etiqueta |
 
 Todo lo demás (Swagger UI incluido) se actualiza solo a partir de las anotaciones en el código —
 no hace falta ningún paso manual adicional para que aparezca documentado ahí.

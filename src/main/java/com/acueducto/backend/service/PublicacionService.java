@@ -176,6 +176,23 @@ public class PublicacionService {
         return etiquetaRepository.findAll();
     }
 
+    /** Elimina definitivamente una etiqueta. Antes de borrarla la desvincula de todas las publicaciones
+     *  que la usan (borra las filas de la tabla intermedia), evitando errores por restriccion de clave foranea. */
+    @Transactional
+    public void eliminarEtiqueta(Long id) {
+        Etiqueta etiqueta = etiquetaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Etiqueta no encontrada con id " + id));
+
+        List<Publicacion> publicacionesConEtiqueta = publicacionRepository.findByEtiquetas_Id(id);
+        for (Publicacion publicacion : publicacionesConEtiqueta) {
+            publicacion.getEtiquetas().remove(etiqueta);
+            publicacionRepository.save(publicacion);
+        }
+
+        etiquetaRepository.delete(etiqueta);
+        auditoriaService.registrar("ELIMINAR_ETIQUETA", "PORTAL_PUBLICO", etiqueta.getNombre(), null);
+    }
+
     // ---- Videos ----
     @Transactional
     public Video crearVideo(VideoRequest request) {

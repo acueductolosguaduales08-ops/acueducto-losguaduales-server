@@ -11,4 +11,5 @@ import java.util.List;
 public interface PublicacionRepository extends JpaRepository<Publicacion, Long> {
     Page<Publicacion> findByEstado(EstadoPublicacion estado, Pageable pageable);
     List<Publicacion> findByEstadoAndDestacadaTrue(EstadoPublicacion estado);
+    List<Publicacion> findByEtiquetas_Id(Long etiquetaId);
 }

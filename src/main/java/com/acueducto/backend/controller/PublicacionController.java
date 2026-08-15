@@ -139,6 +139,16 @@ public class PublicacionController {
         return ResponseEntity.ok(publicacionService.listarEtiquetas());
     }
 
+    @Operation(summary = "Eliminar etiqueta definitivamente",
+            description = "Borra la etiqueta de forma permanente y la desvincula de todas las publicaciones que la usaban.")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
+    @DeleteMapping("/etiquetas/{id}")
+    public ResponseEntity<Void> eliminarEtiqueta(@PathVariable Long id) {
+        publicacionService.eliminarEtiqueta(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // ---- Videos ----
     @Operation(summary = "Publicar video")
     @SecurityRequirement(name = "bearerAuth")

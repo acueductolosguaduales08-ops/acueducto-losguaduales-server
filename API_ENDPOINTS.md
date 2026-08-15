@@ -2195,6 +2195,14 @@ _Disponible sin login (11.6)._
 | `nombre` | String (max 60) |
 | `color` | String (max 10, opcional) |
 
+### `DELETE /api/v1/publicaciones/etiquetas/{id}`
+**Eliminar etiqueta definitivamente**
+_Borra la etiqueta de forma permanente y la desvincula de todas las publicaciones que la usaban (se borran las filas de la tabla intermedia)._
+- **Roles:** hasRole('ADMINISTRADOR') or hasRole('TESORERO')
+- **Path params:** `id` (Long)
+
+**Response body:** sin contenido (204/200 vacio).
+
 ### `POST /api/v1/publicaciones/videos`
 **Publicar video**
 - **Roles:** hasRole('ADMINISTRADOR') or hasRole('TESORERO')
