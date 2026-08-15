@@ -68,7 +68,8 @@ public class SecurityConfig {
             "/api/v1/publicaciones/videos/publicos/**",
             "/api/v1/encuestas/publicas/**",
             "/api/v1/encuestas/codigo/**",
-            "/api/v1/configuracion"
+            "/api/v1/configuracion",
+            "/api/v1/configuracion/hero/actual"
     };
 
     @Bean

@@ -46,7 +46,7 @@ public class Asociado extends BaseEntity {
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
-    @Column(name = "telefono_principal", nullable = false, length = 20)
+    @Column(name = "telefono_principal", length = 20)
     private String telefonoPrincipal;
 
     @Column(name = "telefono_alternativo", length = 20)

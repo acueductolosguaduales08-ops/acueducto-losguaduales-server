@@ -11,6 +11,7 @@ public record MultaRequest(
         @NotNull Long asociadoId,
         Long facturaId,
         @NotBlank @Size(max = 200, message = "El motivo no puede superar 200 caracteres") String motivo,
-        @NotNull @Positive BigDecimal valor
+        @NotNull @Positive BigDecimal valor,
+        Boolean independiente
 ) {
 }

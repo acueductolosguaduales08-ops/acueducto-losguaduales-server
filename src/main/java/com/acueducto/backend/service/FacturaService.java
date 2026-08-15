@@ -83,8 +83,9 @@ public class FacturaService {
         BigDecimal valorConsumo = config.getValorM3().multiply(BigDecimal.valueOf(consumo)).setScale(2, RoundingMode.HALF_UP);
         BigDecimal cargoAdministracion = config.getCargoFijoAdministracion();
 
-        // Multas pendientes del asociado se incluyen automaticamente en la nueva factura (6.8)
-        List<Multa> multasPendientes = multaRepository.findByAsociadoIdAndEstado(
+        // Multas pendientes del asociado se incluyen automaticamente en la nueva factura (6.8).
+        // Las multas "independientes" (aparte) nunca se incluyen: se pagan por su cuenta.
+        List<Multa> multasPendientes = multaRepository.findByAsociadoIdAndEstadoAndIndependienteFalse(
                 lectura.getAsociado().getId(), com.acueducto.backend.entity.enums.EstadoMulta.PENDIENTE);
         BigDecimal totalMultas = multasPendientes.stream().map(Multa::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -156,10 +157,12 @@ public class FacturaService {
         if (factura.getEstado() == EstadoFactura.PAGADA) {
             throw new ReglaNegocioException("No es posible anular una factura ya pagada.");
         }
+        EstadoFactura anterior = factura.getEstado();
         factura.setEstado(EstadoFactura.ANULADA);
         factura.setMotivoAnulacion(motivo);
         factura = facturaRepository.save(factura);
         auditoriaService.registrar("ANULAR_FACTURA", "FACTURACION", factura.getNumeroFactura(), motivo);
+        notificacionService.notificarCambioEstadoFactura(factura, anterior);
         return FacturaResponse.fromEntity(factura);
     }
 
@@ -169,6 +172,7 @@ public class FacturaService {
         List<Factura> pendientes = facturaRepository.findByEstadoAndFechaLimitePagoBefore(EstadoFactura.PENDIENTE, LocalDate.now());
         pendientes.forEach(f -> f.setEstado(EstadoFactura.VENCIDA));
         facturaRepository.saveAll(pendientes);
+        pendientes.forEach(f -> notificacionService.notificarCambioEstadoFactura(f, EstadoFactura.PENDIENTE));
         return pendientes.size();
     }
 

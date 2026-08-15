@@ -24,13 +24,13 @@ public class LecturaController {
 
     private final LecturaService lecturaService;
 
-    @Operation(summary = "Registrar lectura", description = "Calcula el consumo automaticamente (actual - anterior). Nunca puede ser negativo (6.6).")
+    @Operation(summary = "Registrar lectura", description = "Calcula el consumo automaticamente (actual - anterior). La lectura anterior se toma sola del ultimo registro del medidor; si se salto un periodo y ese valor ya no es correcto, se puede enviar 'lecturaAnterior' en el body para indicarla manualmente. El consumo nunca puede ser negativo (6.6).")
     @PostMapping
     public ResponseEntity<LecturaResponse> registrar(@Valid @RequestBody LecturaRequest request) {
         return ResponseEntity.ok(lecturaService.registrar(request));
     }
 
-    @Operation(summary = "Editar lectura", description = "Solo si aun no ha generado factura (6.14).")
+    @Operation(summary = "Editar lectura", description = "Solo si aun no ha generado factura (6.14). La lectura anterior queda fija desde el registro original; si se envia en el body, se ignora.")
     @PutMapping("/{id}")
     public ResponseEntity<LecturaResponse> editar(@PathVariable Long id, @Valid @RequestBody LecturaRequest request) {
         return ResponseEntity.ok(lecturaService.editar(id, request));

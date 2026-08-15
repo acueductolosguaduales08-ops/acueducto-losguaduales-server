@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface EncuestaRepository extends JpaRepository<Encuesta, Long> {
     Optional<Encuesta> findByCodigo(String codigo);
     List<Encuesta> findByEstado(EstadoEncuesta estado);
+    List<Encuesta> findByEstadoIn(List<EstadoEncuesta> estados);
+    boolean existsByAutorId(Long autorId);
 }

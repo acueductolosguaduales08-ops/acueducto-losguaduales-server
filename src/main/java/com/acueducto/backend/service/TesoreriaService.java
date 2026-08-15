@@ -1,6 +1,7 @@
 package com.acueducto.backend.service;
 
 import com.acueducto.backend.dto.request.MovimientoTesoreriaRequest;
+import com.acueducto.backend.dto.request.EditarValorMultaRequest;
 import com.acueducto.backend.dto.request.MultaRequest;
 import com.acueducto.backend.dto.request.RegistrarPagoRequest;
 import com.acueducto.backend.dto.response.*;
@@ -134,6 +135,12 @@ public class TesoreriaService {
         Asociado asociado = asociadoRepository.findById(request.asociadoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Asociado no encontrado"));
 
+        boolean independiente = Boolean.TRUE.equals(request.independiente());
+        if (independiente && request.facturaId() != null) {
+            throw new ReglaNegocioException(
+                    "Una multa independiente (aparte) no puede asociarse a una factura. No envie facturaId.");
+        }
+
         Factura factura = null;
         if (request.facturaId() != null) {
             factura = facturaRepository.findById(request.facturaId())
@@ -147,6 +154,7 @@ public class TesoreriaService {
                 .valor(request.valor())
                 .fecha(LocalDate.now())
                 .estado(EstadoMulta.PENDIENTE)
+                .independiente(independiente)
                 .build();
         multa = multaRepository.save(multa);
 
@@ -157,6 +165,60 @@ public class TesoreriaService {
         }
 
         auditoriaService.registrar("REGISTRAR_MULTA", "TESORERIA", asociado.getDocumento(), request.motivo());
+        notificacionService.notificarMultaRegistrada(multa);
+        return MultaResponse.fromEntity(multa);
+    }
+
+    /** Todas las multas del sistema, de todos los asociados (8.x). */
+    public List<MultaResponse> listarTodasLasMultas() {
+        return multaRepository.findAll().stream().map(MultaResponse::fromEntity).toList();
+    }
+
+    /**
+     * Pago directo de una multa independiente (aparte): no genera recibo ni movimiento de
+     * factura, solo marca la multa como PAGADA. Las multas normales (no independientes) se
+     * pagan junto con su factura, a traves de registrarPago.
+     */
+    @Transactional
+    public MultaResponse pagarMultaIndependiente(Long id) {
+        Multa multa = multaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada con id " + id));
+        if (!multa.isIndependiente()) {
+            throw new ReglaNegocioException(
+                    "Esta multa no es independiente: se paga junto con su factura, no de forma directa.");
+        }
+        if (multa.getEstado() == EstadoMulta.PAGADA) {
+            throw new ReglaNegocioException("Esta multa ya esta pagada.");
+        }
+        if (multa.getEstado() == EstadoMulta.ANULADA) {
+            throw new ReglaNegocioException("Esta multa esta anulada y no se puede pagar.");
+        }
+        multa.setEstado(EstadoMulta.PAGADA);
+        multa = multaRepository.save(multa);
+        auditoriaService.registrar("PAGAR_MULTA_INDEPENDIENTE", "TESORERIA", multa.getAsociado().getDocumento(), multa.getMotivo());
+        return MultaResponse.fromEntity(multa);
+    }
+
+    /**
+     * Solo permite cambiar el valor (el motivo queda fijo). Bloqueado si la multa ya esta
+     * pagada/anulada o si ya quedo incluida en una factura, para no desincronizar el total
+     * de esa factura, que ya se calculo y guardo con el valor anterior.
+     */
+    @Transactional
+    public MultaResponse editarValorMulta(Long id, EditarValorMultaRequest request) {
+        Multa multa = multaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada con id " + id));
+        if (multa.getEstado() != EstadoMulta.PENDIENTE) {
+            throw new ReglaNegocioException("Solo se puede editar el valor de una multa pendiente.");
+        }
+        if (multa.getFactura() != null) {
+            throw new ReglaNegocioException(
+                    "Esta multa ya quedo incluida en una factura y su valor ya no se puede editar.");
+        }
+        multa.setValor(request.valor());
+        multa = multaRepository.save(multa);
+        auditoriaService.registrar("EDITAR_VALOR_MULTA", "TESORERIA", multa.getAsociado().getDocumento(),
+                "Nuevo valor: " + request.valor());
         return MultaResponse.fromEntity(multa);
     }
 

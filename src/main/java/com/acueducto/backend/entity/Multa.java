@@ -41,4 +41,13 @@ public class Multa extends BaseEntity {
     @Builder.Default
     @Column(nullable = false, length = 15)
     private EstadoMulta estado = EstadoMulta.PENDIENTE;
+
+    /**
+     * Multa "aparte": no tiene nada que ver con facturas ni recibos, se paga de forma directa
+     * (ver TesoreriaService.pagarMultaIndependiente) y nunca se incluye automaticamente en la
+     * siguiente factura del asociado (a diferencia de una multa regular).
+     */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean independiente = false;
 }

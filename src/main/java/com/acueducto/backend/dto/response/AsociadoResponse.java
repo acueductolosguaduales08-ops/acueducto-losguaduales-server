@@ -30,8 +30,9 @@ public class AsociadoResponse {
     private LocalDate fechaAfiliacion;
     private String numeroMedidor;
     private boolean archivado;
+    private boolean tieneCuenta;
 
-    public static AsociadoResponse fromEntity(Asociado a) {
+    public static AsociadoResponse fromEntity(Asociado a, boolean tieneCuenta) {
         return AsociadoResponse.builder()
                 .id(a.getId())
                 .codigoInterno(a.getCodigoInterno())
@@ -48,6 +49,7 @@ public class AsociadoResponse {
                 .fechaAfiliacion(a.getFechaAfiliacion())
                 .numeroMedidor(a.getMedidor() != null ? a.getMedidor().getNumero() : null)
                 .archivado(a.isArchivado())
+                .tieneCuenta(tieneCuenta)
                 .build();
     }
 }

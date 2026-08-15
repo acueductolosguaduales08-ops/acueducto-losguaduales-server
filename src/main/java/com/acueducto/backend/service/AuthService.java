@@ -41,6 +41,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuditoriaService auditoriaService;
+    private final NotificacionService notificacionService;
 
     @Value("${app.jwt.expiration-ms}")
     private long expirationMs;
@@ -152,11 +153,38 @@ public class AuthService {
         usuario.setPassword(passwordEncoder.encode(request.passwordNueva()));
         usuarioRepository.save(usuario);
         auditoriaService.registrar("CAMBIO_PASSWORD", "AUTENTICACION", username, null);
+        notificacionService.notificarCambioPassword(usuario);
     }
 
     public UsuarioResponse obtenerPerfil(String username) {
         Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
         return UsuarioResponse.fromEntity(usuario);
+    }
+
+    /**
+     * Confirma la contrasena del usuario autenticado, aunque ya tenga sesion iniciada. Usado
+     * por operaciones sensibles que piden reconfirmar identidad: listar cuentas (8) y todo el
+     * modulo de eliminacion definitiva (5). La contrasena nunca se puede "mostrar" porque
+     * usuario.getPassword() es un hash de un solo sentido (BCrypt); solo se puede verificar.
+     */
+    public void verificarPassword(String username, String password) {
+        Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
+            throw new ReglaNegocioException("La contrasena no es correcta.");
+        }
+    }
+
+    /**
+     * Listado de todas las cuentas del sistema (8). Exclusivo del Administrador, y pide
+     * reconfirmar la contrasena aunque ya haya iniciado sesion. Nunca incluye la contrasena de
+     * nadie: UsuarioResponse no tiene ese campo, y el hash guardado (BCrypt) no se puede
+     * revertir a texto plano de todas formas, ni siquiera por el propio Administrador.
+     */
+    public java.util.List<UsuarioResponse> listarUsuarios(String usernameAdmin, String password) {
+        verificarPassword(usernameAdmin, password);
+        auditoriaService.registrar("LISTAR_CUENTAS", "AUTENTICACION", usernameAdmin, null);
+        return usuarioRepository.findAll().stream().map(UsuarioResponse::fromEntity).toList();
     }
 }

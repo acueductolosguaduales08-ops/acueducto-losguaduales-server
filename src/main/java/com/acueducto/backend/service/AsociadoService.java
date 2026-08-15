@@ -17,6 +17,7 @@ import com.acueducto.backend.repository.FacturaRepository;
 import com.acueducto.backend.repository.MedidorRepository;
 import com.acueducto.backend.repository.MultaRepository;
 import com.acueducto.backend.repository.PagoRepository;
+import com.acueducto.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,8 @@ public class AsociadoService {
     private final FacturaRepository facturaRepository;
     private final PagoRepository pagoRepository;
     private final MultaRepository multaRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final NotificacionService notificacionService;
     private final AuditoriaService auditoriaService;
 
     @Transactional
@@ -77,7 +80,7 @@ public class AsociadoService {
         medidorRepository.save(medidor);
 
         auditoriaService.registrar("CREAR_ASOCIADO", "ASOCIADOS", asociado.getCodigoInterno(), null);
-        return AsociadoResponse.fromEntity(asociado);
+        return AsociadoResponse.fromEntity(asociado, usuarioRepository.existsByAsociadoId(asociado.getId()));
     }
 
     @Transactional
@@ -112,7 +115,7 @@ public class AsociadoService {
 
         asociado = asociadoRepository.save(asociado);
         auditoriaService.registrar("EDITAR_ASOCIADO", "ASOCIADOS", asociado.getCodigoInterno(), null);
-        return AsociadoResponse.fromEntity(asociado);
+        return AsociadoResponse.fromEntity(asociado, usuarioRepository.existsByAsociadoId(asociado.getId()));
     }
 
     @Transactional
@@ -131,7 +134,8 @@ public class AsociadoService {
         asociado = asociadoRepository.save(asociado);
         auditoriaService.registrar("CAMBIO_ESTADO_SERVICIO", "ASOCIADOS", asociado.getCodigoInterno(),
                 anterior + " -> " + request.estado());
-        return AsociadoResponse.fromEntity(asociado);
+        notificacionService.notificarCambioEstadoServicio(asociado, anterior, request.estado());
+        return AsociadoResponse.fromEntity(asociado, usuarioRepository.existsByAsociadoId(asociado.getId()));
     }
 
     /** Baja logica: nunca se elimina fisicamente si tiene historial (2.12 / 5.8). */
@@ -150,7 +154,8 @@ public class AsociadoService {
     }
 
     public AsociadoResponse obtener(Long id) {
-        return AsociadoResponse.fromEntity(obtenerEntidad(id));
+        Asociado asociado = obtenerEntidad(id);
+        return AsociadoResponse.fromEntity(asociado, usuarioRepository.existsByAsociadoId(asociado.getId()));
     }
 
     public Asociado obtenerEntidad(Long id) {
@@ -162,14 +167,15 @@ public class AsociadoService {
         if (query == null || query.isBlank()) {
             return asociadoRepository.findAll().stream()
                     .filter(a -> !a.isArchivado())
-                    .map(AsociadoResponse::fromEntity).toList();
+                    .map(a -> AsociadoResponse.fromEntity(a, usuarioRepository.existsByAsociadoId(a.getId()))).toList();
         }
-        return asociadoRepository.buscar(query).stream().map(AsociadoResponse::fromEntity).toList();
+        return asociadoRepository.buscar(query).stream()
+                .map(a -> AsociadoResponse.fromEntity(a, usuarioRepository.existsByAsociadoId(a.getId()))).toList();
     }
 
     public List<AsociadoResponse> listarPorEstado(EstadoServicio estado) {
         return asociadoRepository.findByEstadoServicioAndArchivadoFalse(estado).stream()
-                .map(AsociadoResponse::fromEntity).toList();
+                .map(a -> AsociadoResponse.fromEntity(a, usuarioRepository.existsByAsociadoId(a.getId()))).toList();
     }
 
     /** Informacion financiera calculada dinamicamente, nunca almacenada (5.4). */

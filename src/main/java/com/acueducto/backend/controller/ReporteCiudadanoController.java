@@ -13,7 +13,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,12 +41,23 @@ public class ReporteCiudadanoController {
     }
 
     @Operation(summary = "Listar todos los reportes ciudadanos",
-            description = "Exclusivo del Administrador y el Tesorero. Muestra nombre, mensaje, contacto, "
+            description = "Exclusivo del Administrador y el Tesorero. Muestra nombre, mensaje, contacto, imagen (si tiene), "
                     + "fecha de creacion y fecha en la que se eliminara cada reporte.")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
     @GetMapping("/api/v1/reportes")
     public ResponseEntity<Page<ReporteCiudadanoResponse>> listar(Pageable pageable) {
         return ResponseEntity.ok(reporteCiudadanoService.listarTodos(pageable));
+    }
+
+    @Operation(summary = "Eliminar un reporte ciudadano definitivamente",
+            description = "Exclusivo del Administrador. Borra el reporte de inmediato, sin esperar a que se cumplan "
+                    + "los 8 dias de retencion automatica (por ejemplo, para quitar spam o contenido inapropiado).")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @DeleteMapping("/api/v1/reportes/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        reporteCiudadanoService.eliminarDefinitivamente(id);
+        return ResponseEntity.noContent().build();
     }
 }

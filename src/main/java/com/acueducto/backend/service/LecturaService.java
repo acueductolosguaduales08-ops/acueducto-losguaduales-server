@@ -51,9 +51,15 @@ public class LecturaService {
             throw new RecursoDuplicadoException("Ya existe una lectura registrada para este medidor en el periodo indicado.");
         }
 
-        int lecturaAnterior = lecturaRepository.findTopByMedidorIdOrderByFechaLecturaDesc(medidor.getId())
-                .map(Lectura::getLecturaActual)
-                .orElse(0);
+        // La lectura anterior se toma automaticamente del ultimo registro del medidor.
+        // Si el administrador la envia manualmente en el request (por ejemplo, porque se
+        // salto un periodo y el ultimo registro ya no refleja la lectura anterior real),
+        // se usa ese valor en su lugar.
+        int lecturaAnterior = request.lecturaAnterior() != null
+                ? request.lecturaAnterior()
+                : lecturaRepository.findTopByMedidorIdOrderByFechaLecturaDesc(medidor.getId())
+                        .map(Lectura::getLecturaActual)
+                        .orElse(0);
 
         if (request.lecturaActual() < lecturaAnterior) {
             throw new ReglaNegocioException(

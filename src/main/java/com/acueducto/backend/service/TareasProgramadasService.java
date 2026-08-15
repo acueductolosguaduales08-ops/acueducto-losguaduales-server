@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-/** Tareas automaticas del sistema: vencimiento de facturas y publicacion programada de contenido. */
+/** Tareas automaticas del sistema: vencimiento de facturas, publicacion programada de contenido y encuestas/formularios programados. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -13,6 +13,7 @@ public class TareasProgramadasService {
 
     private final FacturaService facturaService;
     private final ReporteCiudadanoService reporteCiudadanoService;
+    private final EncuestaService encuestaService;
 
     /** Se ejecuta una vez al dia a las 00:10 y marca como VENCIDA toda factura pendiente fuera de plazo (2.11 / 7.5). */
     @Scheduled(cron = "0 10 0 * * *")
@@ -30,5 +31,22 @@ public class TareasProgramadasService {
         if (eliminados > 0) {
             log.info("Se eliminaron automaticamente {} reporte(s) ciudadano(s) por cumplir 8 dias.", eliminados);
         }
+    }
+
+    /**
+     * Barrido "best-effort" cada 5 minutos: abre/cierra automaticamente los formularios
+     * programados (fechaInicio/fechaFin) que ya deberian haber cambiado de estado.
+     *
+     * OJO: esto NO es lo unico que garantiza la programacion. Si el servicio esta dormido
+     * (Render lo apaga tras inactividad) este barrido simplemente no corre, asi que
+     * EncuestaService tambien recalcula el estado correcto "al leer" cada vez que alguien
+     * consulta o usa una encuesta puntual (ver EncuestaService.sincronizarEstado). Este barrido
+     * solo mejora la experiencia mientras el servicio esta despierto (por ejemplo en horario
+     * de uso activo), para que el cambio se note sin que alguien tenga que abrir esa encuesta
+     * especifica primero.
+     */
+    @Scheduled(cron = "0 */5 * * * *")
+    public void sincronizarEncuestasProgramadas() {
+        encuestaService.sincronizarTodas();
     }
 }

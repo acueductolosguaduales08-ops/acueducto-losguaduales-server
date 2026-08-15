@@ -64,4 +64,16 @@ public class AuthController {
         authService.cambiarPassword(authentication.getName(), request);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Listar todas las cuentas", description = "Exclusivo del Administrador. Pide reconfirmar la contrasena aunque ya haya "
+            + "iniciado sesion. Nunca incluye contrasenas: estan guardadas como hash de un solo sentido (BCrypt) y no se pueden mostrar, "
+            + "ni siquiera por el propio Administrador; si el objetivo es ayudar a alguien que perdio su acceso, la accion correcta es "
+            + "restablecer su contrasena (endpoint de creacion de cuenta / cambio de contrasena), no consultarla.")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PostMapping("/usuarios/listar")
+    public ResponseEntity<java.util.List<UsuarioResponse>> listarUsuarios(Authentication authentication,
+                                                                           @Valid @RequestBody ConfirmarPasswordRequest request) {
+        return ResponseEntity.ok(authService.listarUsuarios(authentication.getName(), request.password()));
+    }
 }

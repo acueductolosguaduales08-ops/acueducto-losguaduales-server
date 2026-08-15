@@ -35,6 +35,14 @@ public class ReporteCiudadano extends BaseEntity {
     @Column(length = 150)
     private String contacto;
 
+    /**
+     * URL de imagen opcional adjunta al reporte (ej: foto de la fuga). TEXT y sin limite de
+     * longitud, normalizada con UrlUtil igual que logo/firma/sello/link de hero: acepta links
+     * largos y con caracteres especiales sin romper el guardado.
+     */
+    @Column(name = "imagen_url", columnDefinition = "TEXT")
+    private String imagenUrl;
+
     /** Fecha en la que el reporte se elimina automaticamente (fecha de creacion + 8 dias). */
     @Column(name = "fecha_eliminacion", nullable = false)
     private LocalDateTime fechaEliminacion;

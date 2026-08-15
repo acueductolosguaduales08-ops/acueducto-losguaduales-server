@@ -13,7 +13,7 @@ public record AsociadoRequest(
         @NotBlank String nombres,
         @NotBlank String apellidos,
         LocalDate fechaNacimiento,
-        @NotBlank String telefonoPrincipal,
+        String telefonoPrincipal,
         String telefonoAlternativo,
         @Email String correo,
         @NotBlank String direccion,

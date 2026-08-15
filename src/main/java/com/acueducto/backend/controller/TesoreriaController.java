@@ -1,5 +1,6 @@
 package com.acueducto.backend.controller;
 
+import com.acueducto.backend.dto.request.EditarValorMultaRequest;
 import com.acueducto.backend.dto.request.MovimientoTesoreriaRequest;
 import com.acueducto.backend.dto.request.MultaRequest;
 import com.acueducto.backend.dto.request.RegistrarPagoRequest;
@@ -35,16 +36,37 @@ public class TesoreriaController {
         return ResponseEntity.ok(tesoreriaService.registrarPago(request));
     }
 
-    @Operation(summary = "Registrar multa")
+    @Operation(summary = "Registrar multa", description = "Multa regular (se incluye en la proxima factura del asociado) o independiente/aparte "
+            + "(independiente=true: no se asocia a factura, se paga directo con /multas/{id}/pagar).")
     @PostMapping("/multas")
     public ResponseEntity<MultaResponse> registrarMulta(@Valid @RequestBody MultaRequest request) {
         return ResponseEntity.ok(tesoreriaService.registrarMulta(request));
+    }
+
+    @Operation(summary = "Listar todas las multas", description = "De todos los asociados, incluye regulares e independientes.")
+    @GetMapping("/multas")
+    public ResponseEntity<List<MultaResponse>> listarTodasLasMultas() {
+        return ResponseEntity.ok(tesoreriaService.listarTodasLasMultas());
     }
 
     @Operation(summary = "Listar multas de un asociado")
     @GetMapping("/multas/asociado/{asociadoId}")
     public ResponseEntity<List<MultaResponse>> listarMultas(@PathVariable Long asociadoId) {
         return ResponseEntity.ok(tesoreriaService.listarMultasPorAsociado(asociadoId));
+    }
+
+    @Operation(summary = "Pagar una multa independiente (aparte)", description = "Solo aplica a multas con independiente=true. "
+            + "Las multas regulares se pagan junto con su factura.")
+    @PatchMapping("/multas/{id}/pagar")
+    public ResponseEntity<MultaResponse> pagarMultaIndependiente(@PathVariable Long id) {
+        return ResponseEntity.ok(tesoreriaService.pagarMultaIndependiente(id));
+    }
+
+    @Operation(summary = "Editar el valor de una multa", description = "El motivo no se puede editar, solo el valor. "
+            + "Bloqueado si la multa ya esta pagada/anulada o ya quedo incluida en una factura.")
+    @PatchMapping("/multas/{id}")
+    public ResponseEntity<MultaResponse> editarValorMulta(@PathVariable Long id, @Valid @RequestBody EditarValorMultaRequest request) {
+        return ResponseEntity.ok(tesoreriaService.editarValorMulta(id, request));
     }
 
     @Operation(summary = "Registrar ingreso extraordinario", description = "Donaciones, reconexiones, nuevas afiliaciones, otros ingresos (8.4).")

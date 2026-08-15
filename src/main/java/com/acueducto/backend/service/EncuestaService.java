@@ -8,6 +8,7 @@ import com.acueducto.backend.dto.response.EncuestaResponse;
 import com.acueducto.backend.dto.response.RespuestaEncuestaResponse;
 import com.acueducto.backend.entity.*;
 import com.acueducto.backend.entity.enums.EstadoEncuesta;
+import com.acueducto.backend.entity.enums.TipoPregunta;
 import com.acueducto.backend.exception.RecursoNoEncontradoException;
 import com.acueducto.backend.exception.ReglaNegocioException;
 import com.acueducto.backend.repository.*;
@@ -46,13 +47,33 @@ public class EncuestaService {
         Usuario autor = usuarioRepository.findByUsernameIgnoreCase(autorUsername)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
+        LocalDateTime ahora = LocalDateTime.now();
+        if (request.fechaInicio() != null && !request.fechaInicio().isAfter(ahora)) {
+            throw new ReglaNegocioException("La fecha de inicio programada debe ser mayor a la fecha y hora actual.");
+        }
+        if (request.fechaFin() != null) {
+            if (!request.fechaFin().isAfter(ahora)) {
+                throw new ReglaNegocioException("La fecha de fin programada debe ser mayor a la fecha y hora actual.");
+            }
+            if (request.fechaInicio() != null && !request.fechaFin().isAfter(request.fechaInicio())) {
+                throw new ReglaNegocioException("La fecha de fin debe ser posterior a la fecha de inicio.");
+            }
+        }
+
         String codigo = NumeracionUtil.formatearFormulario(encuestaRepository.count() + 1);
+
+        // "publico" controla el arranque: si no tiene programacion (fechaInicio), un formulario
+        // publico se activa de inmediato al crearse en vez de quedar en borrador. Si SI tiene
+        // fechaInicio, el arranque lo maneja la programacion (sincronizarEstado), no esta bandera.
+        EstadoEncuesta estadoInicial = (request.publico() && request.fechaInicio() == null)
+                ? EstadoEncuesta.ACTIVA
+                : EstadoEncuesta.BORRADOR;
 
         Encuesta encuesta = Encuesta.builder()
                 .codigo(codigo)
                 .titulo(request.titulo())
                 .descripcion(request.descripcion())
-                .estado(EstadoEncuesta.BORRADOR)
+                .estado(estadoInicial)
                 .publico(request.publico())
                 .requiereAutenticacion(request.requiereAutenticacion())
                 .respuestaUnica(request.respuestaUnica())
@@ -153,10 +174,20 @@ public class EncuestaService {
         Map<Long, PreguntaEncuesta> preguntasPorId = encuesta.getPreguntas().stream()
                 .collect(Collectors.toMap(PreguntaEncuesta::getId, p -> p));
 
+        // Cuantas respuestas llegaron por pregunta: todo lo que no sea OPCION_MULTIPLE admite
+        // como mucho una (para OPCION_MULTIPLE, el frontend puede mandar varios items con el
+        // mismo preguntaId, uno por cada opcion elegida).
+        Map<Long, Long> conteoPorPregunta = request.respuestas().stream()
+                .collect(Collectors.groupingBy(ResponderEncuestaRequest.RespuestaPreguntaItem::preguntaId, Collectors.counting()));
+
         for (var item : request.respuestas()) {
             PreguntaEncuesta pregunta = preguntasPorId.get(item.preguntaId());
             if (pregunta == null) {
                 throw new RecursoNoEncontradoException("La pregunta " + item.preguntaId() + " no pertenece a este formulario.");
+            }
+            if (pregunta.getTipo() != TipoPregunta.OPCION_MULTIPLE && conteoPorPregunta.get(item.preguntaId()) > 1) {
+                throw new ReglaNegocioException(
+                        "La pregunta '" + pregunta.getTexto() + "' no es de opcion multiple: solo admite una respuesta.");
             }
             RespuestaPregunta rp = RespuestaPregunta.builder()
                     .respuestaEncuesta(respuestaEncuesta)
@@ -190,27 +221,88 @@ public class EncuestaService {
         return EncuestaEstadisticasResponse.builder().totalRespuestas(totalRespuestas).resumenPorPregunta(resumen).build();
     }
 
-    public EncuestaResponse obtener(Long id) {
-        return EncuestaResponse.fromEntity(obtenerEntidad(id));
-    }
-
-    /** Resuelve una encuesta a partir del codigo impreso/codificado en su QR (12.14). */
-    public EncuestaResponse obtenerPorCodigo(String codigo) {
-        Encuesta encuesta = encuestaRepository.findByCodigo(codigo)
-                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontro un formulario con el codigo " + codigo));
+    public EncuestaResponse obtener(Long id, Usuario usuarioAutenticado) {
+        Encuesta encuesta = obtenerEntidad(id);
+        verificarPuedeVer(encuesta, usuarioAutenticado);
         return EncuestaResponse.fromEntity(encuesta);
     }
 
-    public Encuesta obtenerEntidad(Long id) {
-        return encuestaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Encuesta no encontrada con id " + id));
+    /** Resuelve una encuesta a partir del codigo impreso/codificado en su QR (12.14). */
+    public EncuestaResponse obtenerPorCodigo(String codigo, Usuario usuarioAutenticado) {
+        Encuesta encuesta = encuestaRepository.findByCodigo(codigo)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontro un formulario con el codigo " + codigo));
+        encuesta = sincronizarEstado(encuesta);
+        verificarPuedeVer(encuesta, usuarioAutenticado);
+        return EncuestaResponse.fromEntity(encuesta);
     }
 
+    /** "no la puede ver sin inicio de sesion" cuando requiereAutenticacion esta activo (10 / 12.13). */
+    private void verificarPuedeVer(Encuesta encuesta, Usuario usuarioAutenticado) {
+        if (encuesta.isRequiereAutenticacion() && usuarioAutenticado == null) {
+            throw new com.acueducto.backend.exception.AccesoDenegadoModuloException(
+                    "Este formulario requiere iniciar sesion para verlo.");
+        }
+    }
+
+    @Transactional
+    public Encuesta obtenerEntidad(Long id) {
+        Encuesta encuesta = encuestaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Encuesta no encontrada con id " + id));
+        return sincronizarEstado(encuesta);
+    }
+
+    @Transactional
     public List<EncuestaResponse> listarActivas() {
+        sincronizarTodas();
         return encuestaRepository.findByEstado(EstadoEncuesta.ACTIVA).stream().map(EncuestaResponse::fromEntity).toList();
     }
 
+    @Transactional
     public List<EncuestaResponse> listarTodas() {
+        sincronizarTodas();
         return encuestaRepository.findAll().stream().map(EncuestaResponse::fromEntity).toList();
+    }
+
+    /**
+     * Corrige el estado de UNA encuesta segun su programacion (fechaInicio/fechaFin), comparando
+     * contra el momento en que se llama este metodo. Se usa "al leer" en vez de con una tarea de
+     * fondo porque el servicio esta en Render, cuyo plan gratuito se apaga por inactividad; una
+     * tarea programada (@Scheduled) simplemente no correria mientras el servicio esta dormido, asi
+     * que la unica forma confiable de que la programacion "funcione siempre" es recalcularla en el
+     * momento en que alguien efectivamente consulta o usa la encuesta (ver tambien
+     * TareasProgramadasService.sincronizarEncuestasProgramadas, que hace un barrido best-effort
+     * mientras el servicio esta despierto).
+     *
+     * Reglas: "si en la hora programada ya esta abierto no cambia" se logra porque BORRADOR->ACTIVA
+     * solo dispara si el estado actual es BORRADOR (si ya esta ACTIVA, no hace nada). Nunca reabre
+     * una encuesta FINALIZADA o ARCHIVADA (esas son terminales: solo se cambian a mano). Un
+     * administrador que activa/desactiva manualmente sigue pudiendo hacerlo en cualquier momento;
+     * esta sincronizacion no lo bloquea, solo actua cuando el estado quedo "atrasado".
+     */
+    Encuesta sincronizarEstado(Encuesta encuesta) {
+        LocalDateTime ahora = LocalDateTime.now();
+        boolean cambio = false;
+
+        if (encuesta.getEstado() == EstadoEncuesta.BORRADOR
+                && encuesta.getFechaInicio() != null
+                && !ahora.isBefore(encuesta.getFechaInicio())) {
+            encuesta.setEstado(EstadoEncuesta.ACTIVA);
+            cambio = true;
+        }
+
+        if (encuesta.getEstado() == EstadoEncuesta.ACTIVA
+                && encuesta.getFechaFin() != null
+                && !ahora.isBefore(encuesta.getFechaFin())) {
+            encuesta.setEstado(EstadoEncuesta.FINALIZADA);
+            cambio = true;
+        }
+
+        return cambio ? encuestaRepository.save(encuesta) : encuesta;
+    }
+
+    /** Pasada completa de sincronizarEstado sobre todo lo que todavia puede cambiar de estado solo. */
+    void sincronizarTodas() {
+        encuestaRepository.findByEstadoIn(List.of(EstadoEncuesta.BORRADOR, EstadoEncuesta.ACTIVA))
+                .forEach(this::sincronizarEstado);
     }
 }

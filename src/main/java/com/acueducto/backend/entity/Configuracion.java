@@ -1,5 +1,6 @@
 package com.acueducto.backend.entity;
 
+import com.acueducto.backend.entity.enums.ModoHero;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * Parametros generales del sistema (Modulo 10). Se maneja como una fila unica (singleton)
@@ -107,6 +109,27 @@ public class Configuracion extends BaseEntity {
 
     @Column(name = "sello_activo", columnDefinition = "TEXT")
     private String selloActivo;
+
+    /**
+     * Modo de exhibicion del hero/banner publico: UNICO (siempre el marcado como principal) o
+     * ALEATORIO_15MIN (cambia a uno al azar cada 15 minutos). Ver HeroLinkService.
+     */
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "modo_hero", nullable = false, length = 20)
+    private ModoHero modoHero = ModoHero.UNICO;
+
+    /**
+     * En modo ALEATORIO_15MIN: id del HeroLink que esta mostrandose ahora mismo y desde cuando.
+     * Se recalcula "al leer" (no con una tarea de fondo) porque en Render el servicio se apaga
+     * por inactividad, y una tarea programada no correria mientras esta dormido; ver
+     * HeroLinkService.heroActual().
+     */
+    @Column(name = "hero_rotacion_actual_id")
+    private Long heroRotacionActualId;
+
+    @Column(name = "hero_rotacion_desde")
+    private LocalDateTime heroRotacionDesde;
 
     /** Interruptor general de auditoria (solo el Administrador puede desactivarlo). */
     @Builder.Default

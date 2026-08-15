@@ -84,6 +84,52 @@ public class NotificacionService {
                 destinatario, "/recibo/" + recibo.getNumeroRecibo());
     }
 
+    /** Cambio de estado del servicio del asociado (activo/suspendido/inactivo) (2 - punto 2 del pedido de mejoras). */
+    public void notificarCambioEstadoServicio(Asociado asociado, com.acueducto.backend.entity.enums.EstadoServicio anterior,
+                                               com.acueducto.backend.entity.enums.EstadoServicio nuevo) {
+        Usuario destinatario = usuarioRepository.findByAsociadoId(asociado.getId()).orElse(null);
+        String titulo = nuevo == com.acueducto.backend.entity.enums.EstadoServicio.SUSPENDIDO
+                ? "Su servicio fue suspendido" : "Cambio en el estado de su servicio";
+        crearNotificacionAutomatica(titulo,
+                "Su servicio paso de " + anterior + " a " + nuevo,
+                "El estado de su servicio de acueducto cambio de " + anterior + " a " + nuevo + ".",
+                destinatario, null);
+    }
+
+    /** Factura anulada o marcada vencida (2 - punto 2 del pedido de mejoras). */
+    public void notificarCambioEstadoFactura(Factura factura, com.acueducto.backend.entity.enums.EstadoFactura anterior) {
+        Usuario destinatario = usuarioRepository.findByAsociadoId(factura.getAsociado().getId()).orElse(null);
+        String titulo;
+        String contenido;
+        if (factura.getEstado() == com.acueducto.backend.entity.enums.EstadoFactura.ANULADA) {
+            titulo = "Factura anulada";
+            contenido = "Su factura " + factura.getNumeroFactura() + " fue anulada. Motivo: " + factura.getMotivoAnulacion() + ".";
+        } else {
+            titulo = "Factura vencida";
+            contenido = "Su factura " + factura.getNumeroFactura() + " paso a estado " + factura.getEstado()
+                    + " (fecha limite de pago: " + factura.getFechaLimitePago() + ").";
+        }
+        crearNotificacionAutomatica(titulo, "Factura " + factura.getNumeroFactura() + ": " + anterior + " -> " + factura.getEstado(),
+                contenido, destinatario, "/factura/" + factura.getNumeroFactura());
+    }
+
+    /** Nueva multa registrada (2 - punto 2 del pedido de mejoras). No se envia para multas independientes recien pagadas. */
+    public void notificarMultaRegistrada(Multa multa) {
+        Usuario destinatario = usuarioRepository.findByAsociadoId(multa.getAsociado().getId()).orElse(null);
+        crearNotificacionAutomatica("Se registro una multa",
+                "Motivo: " + multa.getMotivo(),
+                "Se registro una multa por valor de $" + multa.getValor() + ". Motivo: " + multa.getMotivo() + ".",
+                destinatario, null);
+    }
+
+    /** Cambio de contrasena (aviso de seguridad, para que el usuario detecte un cambio que no hizo el) (2 - punto 2 del pedido de mejoras). */
+    public void notificarCambioPassword(Usuario usuario) {
+        crearNotificacionAutomatica("Su contrasena fue cambiada",
+                "Cambio de contrasena en su cuenta",
+                "La contrasena de su cuenta (" + usuario.getUsername() + ") fue cambiada. Si no fue usted, contacte al administrador de inmediato.",
+                usuario, null);
+    }
+
     private void crearNotificacionAutomatica(String titulo, String descripcionCorta, String contenido,
                                               Usuario destinatario, String enlace) {
         Usuario autorSistema = usuarioRepository.findAll().stream()

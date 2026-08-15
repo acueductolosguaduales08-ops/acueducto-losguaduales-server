@@ -10,6 +10,7 @@ public record LecturaRequest(
         @NotNull Long mesContableId,
         @NotNull LocalDate fechaLectura,
         @NotNull @PositiveOrZero Integer lecturaActual,
+        @PositiveOrZero Integer lecturaAnterior,
         String observaciones
 ) {
 }

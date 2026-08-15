@@ -17,6 +17,7 @@ public class ReporteCiudadanoResponse {
     private String nombre;
     private String mensaje;
     private String contacto;
+    private String imagenUrl;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaEliminacion;
 
@@ -26,6 +27,7 @@ public class ReporteCiudadanoResponse {
                 .nombre(r.getNombre())
                 .mensaje(r.getMensaje())
                 .contacto(r.getContacto())
+                .imagenUrl(r.getImagenUrl())
                 .fechaCreacion(r.getFechaCreacion())
                 .fechaEliminacion(r.getFechaEliminacion())
                 .build();

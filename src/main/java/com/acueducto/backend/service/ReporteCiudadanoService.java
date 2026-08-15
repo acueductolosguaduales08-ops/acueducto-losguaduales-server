@@ -33,10 +33,17 @@ public class ReporteCiudadanoService {
     public ReporteCiudadanoResponse crear(ReporteCiudadanoRequest request) {
         LocalDateTime ahora = LocalDateTime.now();
 
+        // La imagen es opcional; si viene, se normaliza igual que cualquier otro link del
+        // sistema (acepta URLs largas y con caracteres especiales sin romper el guardado).
+        String imagenNormalizada = (request.imagenUrl() != null && !request.imagenUrl().isBlank())
+                ? com.acueducto.backend.util.UrlUtil.normalizar(request.imagenUrl())
+                : null;
+
         ReporteCiudadano reporte = ReporteCiudadano.builder()
                 .nombre(request.nombre())
                 .mensaje(request.mensaje())
                 .contacto(request.contacto())
+                .imagenUrl(imagenNormalizada)
                 .fechaEliminacion(ahora.plusDays(DIAS_RETENCION))
                 .build();
 
@@ -59,5 +66,18 @@ public class ReporteCiudadanoService {
         if (vencidos.isEmpty()) return 0;
         reporteCiudadanoRepository.deleteAll(vencidos);
         return vencidos.size();
+    }
+
+    /**
+     * Borrado manual e inmediato, exclusivo del Administrador. Independiente del borrado
+     * automatico por vencimiento (eliminarVencidos): este permite borrar un reporte antes de
+     * que se cumplan los 8 dias (por ejemplo, spam o contenido inapropiado).
+     */
+    @Transactional
+    public void eliminarDefinitivamente(Long id) {
+        ReporteCiudadano reporte = reporteCiudadanoRepository.findById(id)
+                .orElseThrow(() -> new com.acueducto.backend.exception.RecursoNoEncontradoException(
+                        "Reporte ciudadano no encontrado con id " + id));
+        reporteCiudadanoRepository.delete(reporte);
     }
 }

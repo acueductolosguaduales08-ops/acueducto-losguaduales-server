@@ -12,6 +12,7 @@ import com.acueducto.backend.exception.RecursoNoEncontradoException;
 import com.acueducto.backend.repository.ArchivoInstitucionalRepository;
 import com.acueducto.backend.repository.ConfiguracionRepository;
 import com.acueducto.backend.repository.MetodoPagoRepository;
+import com.acueducto.backend.util.UrlUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 /**
  * Modulo de Parametros del Sistema (Modulo 10). Centraliza informacion institucional,
@@ -150,15 +150,12 @@ public class ConfiguracionService {
     /** Deja margen bajo el limite de 200 caracteres de la columna nombre_archivo. */
     private static final int NOMBRE_ARCHIVO_MAX_LEN = 150;
 
-    private static final Pattern CARACTER_INSEGURO_URL =
-            Pattern.compile("[^A-Za-z0-9\\-._~:/?#\\[\\]@!$&'()*+,;=%]");
-
     @Transactional
     public ArchivoInstitucional subirArchivoInstitucionalDesdeUrl(TipoArchivoInstitucional tipo, String url, String nombreArchivo) {
         // No se descarga ni se guarda ninguna copia en el servidor; solo se valida/normaliza
         // la URL (aceptando espacios, comillas y URLs largas, que era el bug original) y se
         // guarda tal cual, igual que el campo imagenUrl de las publicaciones.
-        String urlNormalizada = normalizarUrl(url);
+        String urlNormalizada = UrlUtil.normalizar(url);
         String nombreSugerido = (nombreArchivo == null || nombreArchivo.isBlank())
                 ? obtenerNombreDesdeUrl(urlNormalizada)
                 : nombreArchivo;
@@ -450,56 +447,5 @@ public class ConfiguracionService {
             // si no se puede decodificar, se usa tal cual; sanitizarNombre() limpia el resto
         }
         return ultimo;
-    }
-
-    /**
-     * Valida y normaliza la URL ingresada por el administrador. En vez de rechazar o borrar
-     * caracteres especiales (comillas, espacios, acentos, etc.), los codifica correctamente
-     * para que la URL sea valida, sin importar de donde se copio. Tambien quita comillas
-     * "envolventes" que suelen quedar pegadas al copiar y pegar (por ejemplo desde un atributo
-     * href="..."). No impone un limite de longitud: ruta (en ArchivoInstitucional) y
-     * logo_activo/firma_activa/sello_activo (en Configuracion) son columnas de tipo TEXT, asi
-     * que una URL larga (por ejemplo firmada, tipo S3) ya no rompe el guardado.
-     */
-    private String normalizarUrl(String url) {
-        if (url == null || url.isBlank()) {
-            throw new IllegalArgumentException("La URL no puede estar vacia");
-        }
-
-        String limpia = url.trim();
-        while (limpia.length() >= 2 && esParDeComillas(limpia.charAt(0), limpia.charAt(limpia.length() - 1))) {
-            limpia = limpia.substring(1, limpia.length() - 1).trim();
-        }
-        limpia = limpia.replace("\\", "/");
-
-        if (!limpia.matches("(?i)^https?://.+")) {
-            throw new IllegalArgumentException("La URL debe empezar por http:// o https://");
-        }
-
-        return codificarCaracteresEspeciales(limpia);
-    }
-
-    private boolean esParDeComillas(char inicio, char fin) {
-        return (inicio == '"' && fin == '"')
-                || (inicio == '\'' && fin == '\'')
-                || (inicio == '\u201c' && fin == '\u201d')
-                || (inicio == '\u2018' && fin == '\u2019')
-                || (inicio == '<' && fin == '>');
-    }
-
-    /** Codifica en porcentaje cualquier caracter no valido en una URL (comillas, espacios, acentos, etc.). */
-    private String codificarCaracteresEspeciales(String url) {
-        StringBuilder resultado = new StringBuilder();
-        for (int i = 0; i < url.length(); i++) {
-            char c = url.charAt(i);
-            if (CARACTER_INSEGURO_URL.matcher(String.valueOf(c)).matches()) {
-                for (byte b : String.valueOf(c).getBytes(StandardCharsets.UTF_8)) {
-                    resultado.append(String.format("%%%02X", b));
-                }
-            } else {
-                resultado.append(c);
-            }
-        }
-        return resultado.toString();
     }
 }
