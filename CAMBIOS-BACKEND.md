@@ -25,6 +25,7 @@ esperado y notas específicas para la UI donde aplica.
 12. [Portal Público: eliminación definitiva de etiquetas](#12-portal-público-eliminación-definitiva-de-etiquetas)
 13. [Corrección: 500 en configuracion/hero por columnas faltantes](#13-corrección-500-en-configuracionhero-por-columnas-faltantes)
 14. [Tabla resumen de endpoints nuevos/modificados](#14-tabla-resumen-de-endpoints-nuevosmodificados)
+15. [Listado general de asociados (HTML/PDF)](#15-listado-general-de-asociados-htmlpdf)
 
 ---
 
@@ -472,6 +473,48 @@ vuelven a responder normalmente. No hay que ejecutar nada manual.
 | `GET` | `/encuestas/codigo/{codigo}` | Modificado — idem |
 | `POST` | `/encuestas/{id}/responder` | Modificado — ahora valida opción única/múltiple (antes no se validaba nada) |
 | `DELETE` | `/publicaciones/etiquetas/{id}` | Nuevo — eliminación definitiva de etiqueta |
+| `GET` | `/informes/listado-asociados` | Nuevo — datos del listado general de asociados |
+| `GET` | `/informes/listado-asociados/html` | Nuevo — vista previa en HTML |
+| `GET` | `/informes/listado-asociados/pdf` | Nuevo — descarga en PDF (logo, sin firma ni sello) |
 
 Todo lo demás (Swagger UI incluido) se actualiza solo a partir de las anotaciones en el código —
 no hace falta ningún paso manual adicional para que aparezca documentado ahí.
+
+---
+
+## 15. Listado general de asociados (HTML/PDF)
+
+Nuevo módulo dentro de **Informes** para descargar el **listado completo de asociados** en un solo
+documento, exactamente con el mismo enfoque que los informes, facturas y recibos: misma plantilla
+Thymeleaf para la **vista previa en HTML** y para la **descarga en PDF** (misma información, mismo
+diseño), con el **logo institucional** pero **sin firma ni sello** (a diferencia de los informes
+de gestión).
+
+### Comportamiento
+
+- Incluye **todos** los asociados **no archivados** (los archivados **no** aparecen, ni en la vista
+  previa ni en el PDF).
+- Se ordenan por su **id interno** (equivalente al `codigoInterno`).
+- De cada asociado se muestra el **detalle completo**: código interno, nombre completo, documento,
+  teléfono, correo, dirección, **estado del servicio**, **número y estado del medidor**, y un
+  indicador de **si tiene cuenta en el sistema** (`SI` / `NO`).
+- Arriba hay un resumen con totales: total de asociados, activos, suspendidos, **con cuenta** y
+  **sin cuenta**.
+
+### Endpoints
+
+| Método | Ruta | Quién | Descripción |
+|---|---|---|---|
+| `GET` | `/informes/listado-asociados` | Admin o Tesorero | Datos del listado en JSON (útil para previsualizar en la UI antes de descargar). |
+| `GET` | `/informes/listado-asociados/html` | Admin o Tesorero | Vista previa del documento en HTML (idéntica al PDF). |
+| `GET` | `/informes/listado-asociados/pdf` | Admin o Tesorero | Descarga el listado en PDF. `Content-Disposition: attachment`. |
+
+### Para el frontend
+
+- En la pantalla de Informes agregar un acceso "Listado de Asociados" (Admin o Tesorero).
+- Para previsualizar: abrir/incrustar `GET /informes/listado-asociados/html` (respuesta `text/html`).
+- Para descargar: `GET /informes/listado-asociados/pdf` con `responseType: 'blob'` y generar el link
+  de descarga con el nombre `listado-asociados-<fecha>.pdf`.
+- Si se quiere mostrar el resumen con los totales como tarjetas antes de descargar, usar
+  `GET /informes/listado-asociados` (JSON) con los campos `totalAsociados`, `asociadosActivos`,
+  `asociadosSuspendidos`, `asociadosConCuenta` y `asociadosSinCuenta`.

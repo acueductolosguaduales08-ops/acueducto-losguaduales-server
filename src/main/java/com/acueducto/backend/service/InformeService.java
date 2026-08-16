@@ -1,6 +1,7 @@
 package com.acueducto.backend.service;
 
 import com.acueducto.backend.dto.response.InformeAsociadoResponse;
+import com.acueducto.backend.dto.response.InformeListadoAsociadosResponse;
 import com.acueducto.backend.dto.response.InformePeriodoResponse;
 import com.acueducto.backend.entity.*;
 import com.acueducto.backend.entity.enums.EstadoFactura;
@@ -35,6 +36,7 @@ public class InformeService {
     private final AsociadoRepository asociadoRepository;
     private final PagoRepository pagoRepository;
     private final ReciboRepository reciboRepository;
+    private final UsuarioRepository usuarioRepository;
 
     // ================= INFORME MENSUAL =================
 
@@ -233,6 +235,49 @@ public class InformeService {
                 .facturas(facturaItems)
                 .pagos(pagoItems)
                 .multas(multaItems)
+                .build();
+    }
+
+    // ================= LISTADO GENERAL DE ASOCIADOS =================
+
+    /**
+     * Listado de todos los asociados NO archivados, ordenado por codigo interno, con el
+     * detalle de cada uno (medidor, estado del servicio y si tiene cuenta en el sistema).
+     */
+    public InformeListadoAsociadosResponse generarListadoAsociados() {
+        List<Asociado> asociados = asociadoRepository.findAll().stream()
+                .filter(a -> !a.isArchivado())
+                .sorted(java.util.Comparator.comparing(Asociado::getId))
+                .toList();
+
+        List<InformeListadoAsociadosResponse.AsociadoItem> items = asociados.stream()
+                .map(a -> InformeListadoAsociadosResponse.AsociadoItem.builder()
+                        .codigoInterno(a.getCodigoInterno())
+                        .nombreCompleto(a.getNombres() + " " + a.getApellidos())
+                        .documento(a.getTipoDocumento() + " " + a.getDocumento())
+                        .telefonoPrincipal(a.getTelefonoPrincipal())
+                        .correo(a.getCorreo())
+                        .direccion(a.getDireccion())
+                        .estadoServicio(a.getEstadoServicio().name())
+                        .fechaAfiliacion(a.getFechaAfiliacion())
+                        .numeroMedidor(a.getMedidor() != null ? a.getMedidor().getNumero() : null)
+                        .estadoMedidor(a.getMedidor() != null ? a.getMedidor().getEstado().name() : null)
+                        .tieneCuenta(usuarioRepository.existsByAsociadoId(a.getId()))
+                        .build())
+                .toList();
+
+        long conCuenta = items.stream().filter(InformeListadoAsociadosResponse.AsociadoItem::isTieneCuenta).count();
+        long activos = items.stream().filter(i -> "ACTIVO".equals(i.getEstadoServicio())).count();
+        long suspendidos = items.stream().filter(i -> "SUSPENDIDO".equals(i.getEstadoServicio())).count();
+
+        return InformeListadoAsociadosResponse.builder()
+                .fechaGeneracion(LocalDate.now())
+                .totalAsociados(items.size())
+                .asociadosConCuenta(conCuenta)
+                .asociadosSinCuenta(items.size() - conCuenta)
+                .asociadosActivos(activos)
+                .asociadosSuspendidos(suspendidos)
+                .asociados(items)
                 .build();
     }
 }

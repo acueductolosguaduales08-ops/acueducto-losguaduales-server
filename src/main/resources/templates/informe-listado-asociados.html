@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Listado de Asociados - ' + ${config.nombreAcueducto}">Listado de Asociados</title>
+    <style>
+        @page { size: A4 landscape; margin: 1.5cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #1a1a1a; }
+        .encabezado { display: table; width: 100%; margin-bottom: 15px; border-bottom: 3px solid #1565c0; padding-bottom: 10px; }
+        .encabezado .logo { display: table-cell; width: 100px; vertical-align: middle; }
+        .encabezado .logo img { max-width: 90px; max-height: 90px; }
+        .encabezado .datos { display: table-cell; vertical-align: middle; padding-left: 15px; }
+        .encabezado .datos h1 { font-size: 18px; margin: 0 0 4px 0; color: #1565c0; }
+        .titulo-informe { text-align: center; margin: 10px 0 15px 0; }
+        .titulo-informe h2 { margin: 0; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; }
+        .titulo-informe .fecha-generacion { font-size: 10px; color: #777; margin-top: 4px; }
+        .resumen { display: table; width: 100%; margin-top: 10px; border-spacing: 6px 0; }
+        .indicador { display: table-cell; width: 20%; text-align: center; background-color: #fafafa; border: 1px solid #eee; border-radius: 6px; padding: 8px 4px; }
+        .indicador .valor { font-size: 15px; font-weight: bold; color: #1565c0; }
+        .indicador .etiqueta { font-size: 8px; color: #777; text-transform: uppercase; margin-top: 3px; }
+        .indicador.ok .valor { color: #2e7d32; }
+        .indicador.alerta .valor { color: #c62828; }
+        table.detalle { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9px; }
+        table.detalle th { background-color: #1565c0; color: #fff; padding: 5px 6px; text-align: left; font-size: 8.5px; text-transform: uppercase; }
+        table.detalle td { padding: 5px 6px; border-bottom: 1px solid #eee; }
+        table.detalle tr:nth-child(even) { background-color: #fafafa; }
+        .estado-badge { display: inline-block; padding: 2px 7px; border-radius: 3px; color: #fff; font-weight: bold; font-size: 8px; }
+        .estado-ACTIVO { background-color: #2e7d32; }
+        .estado-SUSPENDIDO { background-color: #f9a825; }
+        .estado-INACTIVO { background-color: #757575; }
+        .tiene-cuenta { color: #2e7d32; font-weight: bold; }
+        .sin-cuenta { color: #c62828; font-weight: bold; }
+        .pie { margin-top: 20px; font-size: 9px; color: #666; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="encabezado">
+    <div class="logo">
+        <img th:if="${logoSrc}" th:src="${logoSrc}" th:width="${logoAncho}" th:height="${logoAlto}" alt="Logo"/>
+    </div>
+    <div class="datos">
+        <h1 th:text="${config.nombreAcueducto}">Acueducto Los Guaduales</h1>
+        <div th:text="${config.direccion}">Direccion</div>
+        <div>
+            <span th:text="'Tel: ' + ${config.telefonoPrincipal}">Tel</span>
+            <span th:if="${config.nit}" th:text="' | NIT: ' + ${config.nit}"></span>
+        </div>
+    </div>
+</div>
+
+<div class="titulo-informe">
+    <h2>Listado General de Asociados</h2>
+    <div class="fecha-generacion" th:text="'Generado el ' + ${informe.fechaGeneracion}"></div>
+</div>
+
+<div class="resumen">
+    <div class="indicador"><div class="valor" th:text="${informe.totalAsociados}"></div><div class="etiqueta">Total Asociados</div></div>
+    <div class="indicador ok"><div class="valor" th:text="${informe.asociadosActivos}"></div><div class="etiqueta">Activos</div></div>
+    <div class="indicador alerta"><div class="valor" th:text="${informe.asociadosSuspendidos}"></div><div class="etiqueta">Suspendidos</div></div>
+    <div class="indicador ok"><div class="valor" th:text="${informe.asociadosConCuenta}"></div><div class="etiqueta">Con Cuenta</div></div>
+    <div class="indicador alerta"><div class="valor" th:text="${informe.asociadosSinCuenta}"></div><div class="etiqueta">Sin Cuenta</div></div>
+</div>
+
+<table class="detalle">
+    <thead>
+    <tr>
+        <th>Codigo Interno</th>
+        <th>Nombre</th>
+        <th>Documento</th>
+        <th>Telefono</th>
+        <th>Correo</th>
+        <th>Direccion</th>
+        <th>Estado Servicio</th>
+        <th>Medidor</th>
+        <th>Estado Medidor</th>
+        <th>Cuenta</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="a : ${informe.asociados}">
+        <td th:text="${a.codigoInterno}"></td>
+        <td th:text="${a.nombreCompleto}"></td>
+        <td th:text="${a.documento}"></td>
+        <td th:text="${a.telefonoPrincipal}"></td>
+        <td th:text="${a.correo}"></td>
+        <td th:text="${a.direccion}"></td>
+        <td><span th:class="'estado-badge estado-' + ${a.estadoServicio}" th:text="${a.estadoServicio}"></span></td>
+        <td th:text="${a.numeroMedidor}"></td>
+        <td th:text="${a.estadoMedidor}"></td>
+        <td>
+            <span th:if="${a.tieneCuenta}" class="tiene-cuenta" th:text="'SI'">SI</span>
+            <span th:unless="${a.tieneCuenta}" class="sin-cuenta" th:text="'NO'">NO</span>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="pie">
+    <p>Listado generado electronicamente por el Sistema Integral de Gestion del Acueducto Los Guaduales.</p>
+</div>
+
+</body>
+</html>

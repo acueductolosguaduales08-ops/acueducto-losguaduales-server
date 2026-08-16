@@ -1,6 +1,7 @@
 package com.acueducto.backend.controller;
 
 import com.acueducto.backend.dto.response.InformeAsociadoResponse;
+import com.acueducto.backend.dto.response.InformeListadoAsociadosResponse;
 import com.acueducto.backend.dto.response.InformePeriodoResponse;
 import com.acueducto.backend.service.DocumentoService;
 import com.acueducto.backend.service.InformeService;
@@ -102,6 +103,30 @@ public class InformeController {
         byte[] pdf = documentoService.generarInformeAsociadoPdf(informe);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=informe-" + informe.getCodigoInterno() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @Operation(summary = "Datos del listado general de asociados (JSON)")
+    @GetMapping("/listado-asociados")
+    public ResponseEntity<InformeListadoAsociadosResponse> datosListadoAsociados() {
+        return ResponseEntity.ok(informeService.generarListadoAsociados());
+    }
+
+    @Operation(summary = "Listado general de asociados en HTML")
+    @GetMapping(value = "/listado-asociados/html", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> listadoAsociadosHtml() {
+        InformeListadoAsociadosResponse informe = informeService.generarListadoAsociados();
+        return ResponseEntity.ok(documentoService.renderizarListadoAsociadosHtml(informe));
+    }
+
+    @Operation(summary = "Listado general de asociados en PDF", description = "Con logo institucional, sin firma ni sello.")
+    @GetMapping(value = "/listado-asociados/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> listadoAsociadosPdf() {
+        InformeListadoAsociadosResponse informe = informeService.generarListadoAsociados();
+        byte[] pdf = documentoService.generarListadoAsociadosPdf(informe);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=listado-asociados-" + informe.getFechaGeneracion() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }

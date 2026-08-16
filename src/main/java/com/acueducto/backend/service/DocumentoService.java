@@ -1,6 +1,7 @@
 package com.acueducto.backend.service;
 
 import com.acueducto.backend.dto.response.InformeAsociadoResponse;
+import com.acueducto.backend.dto.response.InformeListadoAsociadosResponse;
 import com.acueducto.backend.dto.response.InformePeriodoResponse;
 import com.acueducto.backend.entity.Configuracion;
 import com.acueducto.backend.entity.Factura;
@@ -67,6 +68,14 @@ public class DocumentoService {
         return pdfGeneratorService.generarPdf("informe-asociado", construirContextoInformeAsociado(informe));
     }
 
+    public String renderizarListadoAsociadosHtml(InformeListadoAsociadosResponse informe) {
+        return pdfGeneratorService.renderizarHtml("informe-listado-asociados", construirContextoListadoAsociados(informe));
+    }
+
+    public byte[] generarListadoAsociadosPdf(InformeListadoAsociadosResponse informe) {
+        return pdfGeneratorService.generarPdf("informe-listado-asociados", construirContextoListadoAsociados(informe));
+    }
+
     private Context construirContextoFactura(Factura factura) {
         Configuracion config = configuracionService.obtenerEntidad();
         Context context = new Context();
@@ -105,6 +114,16 @@ public class DocumentoService {
         context.setVariable("informe", informe);
         context.setVariable("config", config);
         agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO, LOGO_CAJA_ALTO, true);
+        return context;
+    }
+
+    private Context construirContextoListadoAsociados(InformeListadoAsociadosResponse informe) {
+        Configuracion config = configuracionService.obtenerEntidad();
+        Context context = new Context();
+        context.setVariable("informe", informe);
+        context.setVariable("config", config);
+        // Solo el logo institucional: este documento NO lleva firma ni sello.
+        agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO, LOGO_CAJA_ALTO, false);
         return context;
     }
 
