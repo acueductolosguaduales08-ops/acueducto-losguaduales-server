@@ -95,7 +95,7 @@ public class DocumentoService {
         context.setVariable("factura", recibo.getFactura());
         context.setVariable("asociado", recibo.getAsociado());
         context.setVariable("config", config);
-        agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO_RECIBO, LOGO_CAJA_ALTO_RECIBO, false);
+        agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO_RECIBO, LOGO_CAJA_ALTO_RECIBO, true);
         return context;
     }
 
