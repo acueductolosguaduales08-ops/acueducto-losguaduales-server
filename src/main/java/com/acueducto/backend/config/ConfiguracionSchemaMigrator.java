@@ -39,7 +39,7 @@ public class ConfiguracionSchemaMigrator implements ApplicationRunner {
             new ColumnaReparar("configuracion", "hero_rotacion_actual_id", "BIGINT", null),
             new ColumnaReparar("configuracion", "hero_rotacion_desde", "TIMESTAMP", null),
             new ColumnaReparar("configuracion", "auditoria_activa", "BOOLEAN", "TRUE"),
-            new ColumnaReparar("multa", "independiente", "BOOLEAN", "FALSE")
+            new ColumnaReparar("multas", "independiente", "BOOLEAN", "FALSE")
     );
 
     private final JdbcTemplate jdbcTemplate;

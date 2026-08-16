@@ -62,14 +62,15 @@ class ConfiguracionSchemaMigratorTest {
     }
 
     @Test
-    void deberiaAgregarColumnaIndependienteALaTablaMulta() {
-        // Simula una tabla multa con filas existentes pero sin la columna independiente.
-        jdbc.execute("CREATE TABLE multa (id BIGINT PRIMARY KEY)");
-        jdbc.execute("INSERT INTO multa (id) VALUES (10)");
+    void deberiaAgregarColumnaIndependienteALaTablaMultas() {
+        // Simula una tabla multas con filas existentes pero sin la columna independiente
+        // (el nombre real de la tabla en la entidad es "multas").
+        jdbc.execute("CREATE TABLE multas (id BIGINT PRIMARY KEY)");
+        jdbc.execute("INSERT INTO multas (id) VALUES (10)");
 
         migrador.run(null);
 
-        assertEquals(Boolean.FALSE, jdbc.queryForObject("SELECT independiente FROM multa WHERE id = 10", Boolean.class));
+        assertEquals(Boolean.FALSE, jdbc.queryForObject("SELECT independiente FROM multas WHERE id = 10", Boolean.class));
     }
 
     @Test
