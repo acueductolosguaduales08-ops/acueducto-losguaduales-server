@@ -12,4 +12,5 @@ public interface EncuestaRepository extends JpaRepository<Encuesta, Long> {
     List<Encuesta> findByEstado(EstadoEncuesta estado);
     List<Encuesta> findByEstadoIn(List<EstadoEncuesta> estados);
     boolean existsByAutorId(Long autorId);
+    List<Encuesta> findByAutorId(Long autorId);
 }

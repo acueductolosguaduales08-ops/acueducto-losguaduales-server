@@ -186,49 +186,105 @@ mantiene igual**, esto es una opción adicional para casos como spam o contenido
 ## 5. Módulo nuevo: Gestión de datos importantes
 
 Módulo completo nuevo, exclusivo del **Administrador**, para eliminación **definitiva e
-irreversible** de: formularios, facturas, recibos, asociados, cuentas y periodos contables (más
-multas, ver punto 7). Base: `/api/v1/datos-importantes`.
+irreversible** de todos los tipos de datos del sistema. Base: `/api/v1/datos-importantes`.
+
+### ⚠️ Actualización de esta ronda — borrado en CASCADA total
+
+Antes, el módulo solo cubría 7 tipos y varios quedaban **bloqueados** si tenían datos
+relacionados. Ahora el borrado es **en cascada**: si el registro que se quiere borrar tiene
+historial, ese historial también se borra automáticamente (en el orden correcto para no romper
+las referencias), así que **ningún tipo queda bloqueado** por tener datos asociados.
+
+Reglas clave de la cascada:
+
+- **Al borrar un asociado** se borra TODO su historial (facturas → pagos → recibos → movimientos,
+  multas, lecturas y su cuenta de usuario si existe) y el **medidor NO se borra**: solo se
+  desvincula y queda disponible.
+- **Al borrar un medidor** se desvincula del asociado (el asociado no se borra) y se borran sus
+  lecturas en cascada (y las facturas que esas lecturas hayan generado).
+- **Al borrar una factura** se borran en cascada sus pagos, recibos, movimientos y conceptos; las
+  multas que apuntaban a ella quedan sueltas y su lectura vuelve a quedar disponible.
+- **Al borrar un pago** se borra su recibo y movimientos y se **recalcula** el total pagado y el
+  estado de la factura (reversa contable real).
+- **Al borrar una multa** que ya estaba incluida en una factura, se descuenta su valor del total
+  de esa factura.
+- **Al borrar una cuenta** se borran en cascada los formularios que creó, sus notificaciones,
+  respuestas de formularios (se desvinculan), pagos que registró como tesorero y movimientos que
+  registró. Única excepción: **no se puede borrar la propia cuenta en uso** (dejaría el sistema
+  sin el administrador actual; use otra cuenta).
+- **Al borrar un periodo contable (mes)** se borran en cascada sus facturas, lecturas y
+  movimientos; **al borrar un año contable** se borran sus meses en cascada.
+- **Al borrar un formulario** se borran sus preguntas y respuestas; **al borrar un recibo** se
+  borran sus movimientos (el pago y la factura no se tocan); **al borrar una notificación** se
+  borran sus registros de lectura.
 
 ### Cómo funciona cada endpoint
 
-Todos son `DELETE /datos-importantes/{tipo}/{id}`, y **todos piden la contraseña del
-Administrador en el body**, aunque ya tenga sesión iniciada:
+Todos los `DELETE` piden la **contraseña del Administrador en el body**, aunque ya tenga sesión
+iniciada:
 
 ```json
 { "password": "..." }
 ```
 
-| Tipo | Ruta | Bloqueado cuando... |
-|---|---|---|
-| Formulario | `DELETE /datos-importantes/formularios/{id}` | Nunca — borra en cascada sus preguntas y respuestas ya recibidas. |
-| Factura | `DELETE /datos-importantes/facturas/{id}` | Tiene pagos registrados (se perdería dinero real ya recibido). |
-| Recibo | `DELETE /datos-importantes/recibos/{id}` | Nunca — pero no revierte el estado de la factura/pago asociados. |
-| Asociado | `DELETE /datos-importantes/asociados/{id}` | Tiene historial (facturas, pagos o lecturas) — en ese caso, usar "archivar" en su lugar. También bloqueado si tiene una cuenta de usuario vinculada (hay que borrar la cuenta primero, por separado). |
-| Cuenta | `DELETE /datos-importantes/cuentas/{id}` | Es la propia cuenta del Administrador que está haciendo la petición, o es autor de algún formulario. |
-| Periodo contable | `DELETE /datos-importantes/periodos-contables/{id}` | Tiene lecturas o facturas registradas en ese mes. |
-| Multa | `DELETE /datos-importantes/multas/{id}` | Ya quedó incluida en una factura. |
+| Tipo | Ruta |
+|---|---|
+| Formulario | `DELETE /datos-importantes/formularios/{id}` |
+| Factura | `DELETE /datos-importantes/facturas/{id}` |
+| Recibo | `DELETE /datos-importantes/recibos/{id}` |
+| Asociado | `DELETE /datos-importantes/asociados/{id}` |
+| Cuenta | `DELETE /datos-importantes/cuentas/{id}` |
+| Periodo contable (mes) | `DELETE /datos-importantes/periodos-contables/{id}` |
+| Año contable | `DELETE /datos-importantes/anios-contables/{id}` |
+| Multa | `DELETE /datos-importantes/multas/{id}` |
+| Medidor | `DELETE /datos-importantes/medidores/{id}` |
+| Lectura | `DELETE /datos-importantes/lecturas/{id}` |
+| Pago | `DELETE /datos-importantes/pagos/{id}` |
+| Movimiento de tesorería | `DELETE /datos-importantes/movimientos/{id}` |
+| Notificación | `DELETE /datos-importantes/notificaciones/{id}` |
 
-Cuando algo está bloqueado, el servidor responde con un mensaje explicando por qué y, cuando
-aplica, qué hacer en su lugar (por ejemplo "archive al asociado en vez de eliminarlo").
+### Antes de borrar: `GET /verificar` (informa qué se va a borrar)
 
-### ⚠️ Nota importante — esto no es literal a lo pedido, léanla
+`GET /datos-importantes/verificar?tipo=ASOCIADO&id=5` devuelve, **sin borrar nada**, qué se va a
+eliminar y en cascada. `tipo` acepta: `FORMULARIO`, `FACTURA`, `RECIBO`, `ASOCIADO`, `CUENTA`,
+`PERIODO_CONTABLE`, `ANIO_CONTABLE`, `MULTA`, `MEDIDOR`, `LECTURA`, `PAGO`, `MOVIMIENTO`,
+`NOTIFICACION`.
 
-El pedido original decía "eliminar definitivamente" sin más condiciones. Se implementó **con
-las validaciones de la tabla de arriba**, en vez de un borrado incondicional, por una razón
-concreta: el propio proyecto ya tiene una regla explícita para asociados ("un asociado con
-historial nunca se elimina físicamente") precisamente porque borrar facturas/pagos sin cuidado
-rompe la integridad de la contabilidad — un borrado sin ningún control podría, por ejemplo,
-fallar a mitad de camino por una restricción de la base de datos, o peor, "funcionar" pero dejar
-huecos en reportes ya generados. Se aplicó el mismo criterio de protección a los demás tipos.
-Si en algún caso puntual necesitan saltarse una de estas validaciones, avisen y se ajusta ese
-caso específico.
+Ejemplo de respuesta:
+
+```json
+{
+  "tipo": "ASOCIADO",
+  "id": 5,
+  "borrable": true,
+  "referencia": "ASC-00005",
+  "motivosBloqueo": [],
+  "cascada": {
+    "facturas": 12,
+    "pagos": 10,
+    "recibos": 10,
+    "multas": 2,
+    "lecturas": 14,
+    "movimientosTesoreria": 10,
+    "notificaciones": 8,
+    "cuentaVinculada": 1,
+    "medidorDesvinculado": 1
+  },
+  "mensaje": "Se borrará el asociado y TODO su historial en cascada. El medidor solo se desvincula, NO se borra."
+}
+```
+
+Cuando algo no se puede borrar (el único caso es la propia cuenta en uso), `borrable` viene
+`false` y `motivosBloqueo` explica por qué.
 
 ### Para el frontend
 
-Antes de llamar a cualquiera de estos endpoints, mostrar una confirmación explícita del tipo
-"esto se va a perder para siempre, ¿continuar?" y pedir que el usuario escriba/confirme la
-contraseña en ese mismo diálogo (tal como se pidió). Cada eliminación queda registrada en
-auditoría con quién la hizo.
+1. Llamar `GET /datos-importantes/verificar?tipo=...&id=...` y mostrar la lista de `cascada`
+   (lo que se va a perder) en un diálogo de confirmación del tipo "esto se va a perder para
+   siempre, ¿continuar?".
+2. Pedir que el usuario escriba/confirme la contraseña en ese mismo diálogo.
+3. Llamar al `DELETE` correspondiente con `{ "password": "..." }` en el body.
+4. Cada eliminación queda registrada en auditoría con quién la hizo.
 
 ---
 
@@ -455,13 +511,20 @@ vuelven a responder normalmente. No hay que ejecutar nada manual.
 | `PUT` | `/lecturas/{id}` | Modificado (ver nota: `lecturaAnterior` se ignora) |
 | `POST` | `/reportes` | Modificado — `imagenUrl` opcional |
 | `DELETE` | `/reportes/{id}` | Nuevo |
-| `DELETE` | `/datos-importantes/formularios/{id}` | Nuevo |
-| `DELETE` | `/datos-importantes/facturas/{id}` | Nuevo |
+| `DELETE` | `/datos-importantes/formularios/{id}` | Nuevo — borrado definitivo en cascada |
+| `DELETE` | `/datos-importantes/facturas/{id}` | Nuevo — cascada de pagos/recibos/movimientos |
 | `DELETE` | `/datos-importantes/recibos/{id}` | Nuevo |
-| `DELETE` | `/datos-importantes/asociados/{id}` | Nuevo |
-| `DELETE` | `/datos-importantes/cuentas/{id}` | Nuevo |
-| `DELETE` | `/datos-importantes/periodos-contables/{id}` | Nuevo |
-| `DELETE` | `/datos-importantes/multas/{id}` | Nuevo |
+| `DELETE` | `/datos-importantes/asociados/{id}` | Nuevo — cascada total del historial, medidor solo se desvincula |
+| `DELETE` | `/datos-importantes/cuentas/{id}` | Nuevo — cascada de dependencias |
+| `DELETE` | `/datos-importantes/periodos-contables/{id}` | Nuevo — cascada del mes |
+| `DELETE` | `/datos-importantes/anios-contables/{id}` | Nuevo — cascada de meses |
+| `DELETE` | `/datos-importantes/multas/{id}` | Nuevo — descuenta el valor de la factura si estaba incluida |
+| `DELETE` | `/datos-importantes/medidores/{id}` | Nuevo — desvincula al asociado y borra lecturas en cascada |
+| `DELETE` | `/datos-importantes/lecturas/{id}` | Nuevo — cascada de la factura si la generó |
+| `DELETE` | `/datos-importantes/pagos/{id}` | Nuevo — reversa contable (recibo + movimientos + recalculo de factura) |
+| `DELETE` | `/datos-importantes/movimientos/{id}` | Nuevo |
+| `DELETE` | `/datos-importantes/notificaciones/{id}` | Nuevo |
+| `GET` | `/datos-importantes/verificar` | Nuevo — diagnóstico previo de qué se va a borrar en cascada |
 | `POST` | `/asociados` | Modificado — `telefonoPrincipal` ya no obligatorio |
 | `*` (varios) | Respuestas de asociado | Modificado — nuevo campo `tieneCuenta` |
 | `POST` | `/tesoreria/multas` | Modificado — campo `independiente` opcional |

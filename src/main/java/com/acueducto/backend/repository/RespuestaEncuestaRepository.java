@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface RespuestaEncuestaRepository extends JpaRepository<RespuestaEncuesta, Long> {
     List<RespuestaEncuesta> findByEncuestaId(Long encuestaId);
+    List<RespuestaEncuesta> findByUsuarioId(Long usuarioId);
     boolean existsByEncuestaIdAndUsuarioId(Long encuestaId, Long usuarioId);
     long countByEncuestaId(Long encuestaId);
 }

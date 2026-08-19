@@ -16,4 +16,5 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     Page<Factura> findByEstado(EstadoFactura estado, Pageable pageable);
     List<Factura> findByMesContableId(Long mesContableId);
     List<Factura> findByEstadoAndFechaLimitePagoBefore(EstadoFactura estado, java.time.LocalDate fecha);
+    Optional<Factura> findByLecturaId(Long lecturaId);
 }

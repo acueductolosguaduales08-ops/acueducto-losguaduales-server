@@ -10,4 +10,6 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     List<Pago> findByFacturaId(Long facturaId);
     List<Pago> findByAsociadoId(Long asociadoId);
     List<Pago> findByFechaBetween(LocalDateTime desde, LocalDateTime hasta);
+    boolean existsByTesoreroId(Long tesoreroId);
+    List<Pago> findByTesoreroId(Long tesoreroId);
 }

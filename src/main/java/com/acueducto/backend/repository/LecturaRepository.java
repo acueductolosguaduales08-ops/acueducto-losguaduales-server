@@ -11,6 +11,7 @@ public interface LecturaRepository extends JpaRepository<Lectura, Long> {
     List<Lectura> findByAsociadoIdOrderByFechaLecturaDesc(Long asociadoId);
     List<Lectura> findByMesContableIdAndFacturaGeneradaFalse(Long mesContableId);
     List<Lectura> findByMesContableId(Long mesContableId);
+    List<Lectura> findByMedidorId(Long medidorId);
 
     Optional<Lectura> findTopByMedidorIdOrderByFechaLecturaDesc(Long medidorId);
 }

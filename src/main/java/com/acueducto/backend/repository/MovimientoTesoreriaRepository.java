@@ -15,4 +15,8 @@ public interface MovimientoTesoreriaRepository extends JpaRepository<MovimientoT
     Page<MovimientoTesoreria> findByTipo(TipoMovimiento tipo, Pageable pageable);
     List<MovimientoTesoreria> findByFechaBetweenAndAnuladoFalse(LocalDateTime desde, LocalDateTime hasta);
     List<MovimientoTesoreria> findByMesContableId(Long mesContableId);
+    List<MovimientoTesoreria> findByAsociadoId(Long asociadoId);
+    List<MovimientoTesoreria> findByFacturaId(Long facturaId);
+    List<MovimientoTesoreria> findByReciboId(Long reciboId);
+    List<MovimientoTesoreria> findByUsuarioId(Long usuarioId);
 }

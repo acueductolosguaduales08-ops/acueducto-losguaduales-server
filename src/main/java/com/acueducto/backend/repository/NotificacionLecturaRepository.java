@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface NotificacionLecturaRepository extends JpaRepository<NotificacionLectura, Long> {
     Optional<NotificacionLectura> findByNotificacionIdAndUsuarioId(Long notificacionId, Long usuarioId);
     List<NotificacionLectura> findByUsuarioId(Long usuarioId);
+    List<NotificacionLectura> findByNotificacionId(Long notificacionId);
 }
