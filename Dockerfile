@@ -12,6 +12,18 @@ RUN mvn -DskipTests package
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=build /app/target/acueducto-backend.jar /app/app.jar
+
+# Paso de entrenamiento AppCDS: arranca la app una vez y, gracias a CdsExitRunner
+# (-Dapp.cds-dump=true), termina sola de forma ordenada apenas termina de iniciar. Eso hace que
+# la JVM escriba el archivo de clases compartidas /app/app.jsa (-XX:ArchiveClassesAtExit), que
+# luego se carga en runtime para reducir el tiempo de arranque en frio en Render. Se usa el
+# perfil dev (H2 en memoria) porque en el build no hay PostgreSQL; las clases pesadas (Spring y
+# la propia aplicacion) son identicas en prod. `|| true` evita que el build falle si algo sale
+# mal: en runtime -Xshare:auto simplemente usara el archivo CDS por defecto del JDK.
+RUN java -Dapp.cds-dump=true -XX:ArchiveClassesAtExit=/app/app.jsa -jar /app/app.jar \
+        --spring.profiles.active=dev --server.port=0 --spring.main.banner-mode=off \
+        --logging.level.root=WARN > /dev/null 2>&1 || true
+
 EXPOSE 8080
 ENV PORT=8080
 # Banderas pensadas para el plan gratuito de Render (contenedor chico: 512MB RAM / 0.1 CPU) y
@@ -22,6 +34,11 @@ ENV PORT=8080
 #   trafico sostenido, que no es el perfil de uso de este servicio.
 # - UseSerialGC: recolector de basura de un solo hilo, con menos overhead de arranque y memoria
 #   que el recolector por defecto (G1), apropiado para una CPU tan limitada (0.1 core).
+# - SharedArchiveFile + Xshare=auto: carga el archivo AppCDS generado en el paso de entrenamiento
+#   para acelerar la carga de clases en el arranque. "auto" hace que, si el archivo no sirve, la
+#   JVM use el archivo CDS por defecto del JDK sin fallar.
+# - MaxMetaspaceSize/MetaspaceSize: evitan redimensionamientos de metaspace durante el arranque.
+# - PerfDisableSharedMem: evita escribir /tmp/hsperfdata en el arranque.
 # NO se fijo un tamano de heap (-Xmx) a mano para no arriesgar quedarse corto en otro plan de
 # Render con mas o menos memoria: el JVM ya detecta el limite del contenedor automaticamente.
-ENTRYPOINT ["java","-XX:TieredStopAtLevel=1","-XX:+UseSerialGC","-jar","/app/app.jar"]
+ENTRYPOINT ["java","-XX:TieredStopAtLevel=1","-XX:+UseSerialGC","-XX:MaxMetaspaceSize=256m","-XX:MetaspaceSize=64m","-XX:+PerfDisableSharedMem","-XX:SharedArchiveFile=/app/app.jsa","-Xshare:auto","-jar","/app/app.jar"]
