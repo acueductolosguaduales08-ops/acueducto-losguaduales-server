@@ -1,6 +1,7 @@
 package com.acueducto.backend.service;
 
 import com.acueducto.backend.dto.request.LecturaRequest;
+import com.acueducto.backend.dto.response.LecturaAnteriorPorDefectoResponse;
 import com.acueducto.backend.dto.response.LecturaResponse;
 import com.acueducto.backend.entity.Lectura;
 import com.acueducto.backend.entity.MesContable;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Modulo de Medidores y Consumos (Modulo 6). El calculo del consumo siempre se hace en el
@@ -82,6 +84,26 @@ public class LecturaService {
         auditoriaService.registrar("REGISTRAR_LECTURA", "MEDIDORES", medidor.getNumero(),
                 "Consumo: " + lectura.getConsumoM3() + " m3");
         return LecturaResponse.fromEntity(lectura);
+    }
+
+    public LecturaAnteriorPorDefectoResponse anteriorPorDefecto(Long medidorId) {
+        Medidor medidor = medidorRepository.findById(medidorId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Medidor no encontrado"));
+
+        Optional<Lectura> ultima = lecturaRepository.findTopByMedidorIdOrderByFechaLecturaDesc(medidor.getId());
+
+        return LecturaAnteriorPorDefectoResponse.builder()
+                .medidorId(medidor.getId())
+                .numeroMedidor(medidor.getNumero())
+                .asociadoId(medidor.getAsociado() != null ? medidor.getAsociado().getId() : null)
+                .asociadoNombre(medidor.getAsociado() != null
+                        ? medidor.getAsociado().getNombres() + " " + medidor.getAsociado().getApellidos()
+                        : null)
+                .lecturaAnteriorPorDefecto(ultima.map(Lectura::getLecturaActual).orElse(0))
+                .ultimaLecturaId(ultima.map(Lectura::getId).orElse(null))
+                .ultimaFechaLectura(ultima.map(Lectura::getFechaLectura).orElse(null))
+                .hayRegistroPrevio(ultima.isPresent())
+                .build();
     }
 
     @Transactional

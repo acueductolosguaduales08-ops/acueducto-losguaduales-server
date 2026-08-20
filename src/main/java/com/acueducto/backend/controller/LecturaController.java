@@ -1,6 +1,7 @@
 package com.acueducto.backend.controller;
 
 import com.acueducto.backend.dto.request.LecturaRequest;
+import com.acueducto.backend.dto.response.LecturaAnteriorPorDefectoResponse;
 import com.acueducto.backend.dto.response.LecturaResponse;
 import com.acueducto.backend.service.LecturaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +29,12 @@ public class LecturaController {
     @PostMapping
     public ResponseEntity<LecturaResponse> registrar(@Valid @RequestBody LecturaRequest request) {
         return ResponseEntity.ok(lecturaService.registrar(request));
+    }
+
+    @Operation(summary = "Lectura anterior por defecto", description = "Devuelve la lectura que se usara automaticamente como 'lecturaAnterior' al registrar una lectura nueva para ese medidor: la lectura actual de su ultimo registro, o 0 si aun no tiene historial. Sirve para que el usuario vea y confirme el valor antes de guardar.")
+    @GetMapping("/anterior-por-defecto")
+    public ResponseEntity<LecturaAnteriorPorDefectoResponse> anteriorPorDefecto(@RequestParam Long medidorId) {
+        return ResponseEntity.ok(lecturaService.anteriorPorDefecto(medidorId));
     }
 
     @Operation(summary = "Editar lectura", description = "Solo si aun no ha generado factura (6.14). La lectura anterior queda fija desde el registro original; si se envia en el body, se ignora.")

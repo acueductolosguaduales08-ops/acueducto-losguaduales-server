@@ -116,6 +116,42 @@ En `PUT /lecturas/{id}` (editar), si se envía `lecturaAnterior` en el body, **s
 valor queda fijo desde el registro original y no se puede editar después, para no desincronizar
 el consumo ya calculado.
 
+### Endpoint nuevo: `GET /lecturas/anterior-por-defecto` (exclusivo del Administrador)
+
+Antes de registrar una lectura, el formulario puede preguntarle al backend **cuál será la lectura
+anterior que se usará por defecto** para ese medidor, sin necesidad de guardar nada:
+
+```
+GET /api/v1/lecturas/anterior-por-defecto?medidorId=5
+```
+
+Devuelve exactamente el valor que tomará `lecturaAnterior` al crear la lectura: la **lectura
+actual del último registro** del medidor, o `0` si todavía no tiene historial (misma regla que ya
+aplicaba `POST /lecturas`). Ejemplo de respuesta:
+
+```json
+{
+  "medidorId": 5,
+  "numeroMedidor": "M-00005",
+  "asociadoId": 3,
+  "asociadoNombre": "Nombre Apellido",
+  "lecturaAnteriorPorDefecto": 120,
+  "ultimaLecturaId": 42,
+  "ultimaFechaLectura": "2026-07-05",
+  "hayRegistroPrevio": true
+}
+```
+
+- Si el medidor **no tiene lecturas previas**, viene `lecturaAnteriorPorDefecto: 0` y
+  `hayRegistroPrevio: false` (y `ultimaLecturaId`/`ultimaFechaLectura` en `null`).
+- El medidor se identifica por su **id** (el que se manda en `POST /lecturas` → `medidorId`).
+- El campo `asociadoNombre`/`asociadoId` puede venir `null` si el medidor aún no tiene asociado
+  asignado (igual que al registrar, que exigiría asociado).
+
+**Para el frontend:** al abrir el formulario de "registrar lectura" (o al cambiar de medidor),
+llamar este endpoint y mostrar el valor devuelto como la "lectura anterior" precargada, para que
+el usuario la confirme o la corrija manualmente antes de enviar.
+
 ---
 
 ## 3. Notificaciones automáticas
@@ -510,6 +546,7 @@ vuelven a responder normalmente. No hay que ejecutar nada manual.
 | `PATCH` | `/configuracion/hero/{id}/principal` | Nuevo |
 | `PUT` | `/configuracion/hero/modo` | Nuevo |
 | `POST` | `/lecturas` | Modificado — `lecturaAnterior` opcional |
+| `GET` | `/lecturas/anterior-por-defecto` | Nuevo — lectura anterior que se usará por defecto (antes de registrar) |
 | `PUT` | `/lecturas/{id}` | Modificado (ver nota: `lecturaAnterior` se ignora) |
 | `POST` | `/reportes` | Modificado — `imagenUrl` opcional |
 | `DELETE` | `/reportes/{id}` | Nuevo |
