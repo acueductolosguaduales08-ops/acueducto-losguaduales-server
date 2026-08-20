@@ -544,9 +544,9 @@
         <div class="seccion">
             <div class="seccion-titulo">VALOR RECIBIDO</div>
             <div class="valor-recibido">
-                <div class="valor" th:text="'$' + ${recibo.valor}">$282000.00</div>
+                <div class="valor" th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(recibo.valor)}">$282.000</div>
                 <div class="saldo" th:if="${recibo.saldoPendiente != null and recibo.saldoPendiente.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
-                    Saldo pendiente de la factura: <b th:text="'$' + ${recibo.saldoPendiente}">$0.00</b>
+                    Saldo pendiente de la factura: <b th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(recibo.saldoPendiente)}">$0</b>
                 </div>
             </div>
         </div>

@@ -603,32 +603,32 @@
                 </thead>
                 <tbody>
                 <tr>
-                    <td>Consumo de agua (<span th:text="${factura.consumoM3}"></span> m3 x $<span th:text="${factura.valorM3}"></span>)</td>
-                    <td th:text="'$' + ${factura.valorConsumo}">$150000.00</td>
+                    <td>Consumo de agua (<span th:text="${factura.consumoM3}"></span> m3 x $<span th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatear(factura.valorM3)}"></span>)</td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(factura.valorConsumo)}">$150.000</td>
                 </tr>
                 <tr>
                     <td>Cargo fijo de administracion</td>
-                    <td th:text="'$' + ${factura.cargoAdministracion}">$8000.00</td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(factura.cargoAdministracion)}">$8.000</td>
                 </tr>
                 <tr th:if="${factura.totalMultas != null and factura.totalMultas.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
                     <td>Multas pendientes</td>
-                    <td th:text="'$' + ${factura.totalMultas}">$0.00</td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(factura.totalMultas)}">$0</td>
                 </tr>
                 <tr th:each="concepto : ${conceptos}">
                     <td th:text="${concepto.descripcion}"></td>
-                    <td th:text="'$' + ${concepto.valor}"></td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(concepto.valor)}"></td>
                 </tr>
                 <tr class="total">
                     <td>TOTAL A PAGAR</td>
-                    <td th:text="'$' + ${factura.total}">$158000.00</td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(factura.total)}">$158.000</td>
                 </tr>
                 <tr th:if="${factura.totalPagado != null and factura.totalPagado.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
                     <td>Total pagado</td>
-                    <td th:text="'$' + ${factura.totalPagado}">$0.00</td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(factura.totalPagado)}">$0</td>
                 </tr>
                 <tr th:if="${factura.totalPagado != null and factura.totalPagado.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
                     <td><b>Saldo pendiente</b></td>
-                    <td><b th:text="'$' + ${factura.saldoPendiente}">$0.00</b></td>
+                    <td><b th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(factura.saldoPendiente)}">$0</b></td>
                 </tr>
                 </tbody>
             </table>
