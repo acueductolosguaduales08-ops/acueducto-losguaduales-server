@@ -27,6 +27,7 @@ esperado y notas específicas para la UI donde aplica.
 14. [Tabla resumen de endpoints nuevos/modificados](#14-tabla-resumen-de-endpoints-nuevosmodificados)
 15. [Listado general de asociados (HTML/PDF)](#15-listado-general-de-asociados-htmlpdf)
 16. [Chat interno (módulo nuevo)](#16-chat-interno-módulo-nuevo)
+17. [Enlace público de descarga de facturas y recibos](#17-enlace-público-de-descarga-de-facturas-y-recibos)
 
 ---
 
@@ -540,6 +541,10 @@ vuelven a responder normalmente. No hay que ejecutar nada manual.
 | `GET` | `/informes/listado-asociados` | Nuevo — datos del listado general de asociados |
 | `GET` | `/informes/listado-asociados/html` | Nuevo — vista previa en HTML |
 | `GET` | `/informes/listado-asociados/pdf` | Nuevo — descarga en PDF (logo, sin firma ni sello) |
+| `POST` | `/facturas/{id}/public-link` | Nuevo — enlace público temporal de la factura (Admin o Tesorero) |
+| `POST` | `/recibos/{numeroRecibo}/public-link` | Nuevo — enlace público temporal del recibo (Admin o Tesorero) |
+| `GET` | `/public/facturas/{token}` | Nuevo — descarga pública del PDF de la factura, sin login |
+| `GET` | `/public/recibos/{token}` | Nuevo — descarga pública del PDF del recibo, sin login |
 
 Todo lo demás (Swagger UI incluido) se actualiza solo a partir de las anotaciones en el código —
 no hace falta ningún paso manual adicional para que aparezca documentado ahí.
@@ -647,3 +652,77 @@ es `/api/chat` (diferente de `/api/v1`).
 
 > Nota: las tablas del chat (`conversaciones`, `mensajes`, `solicitudes_eliminacion`) se crean
 > automáticamente con `ddl-auto: update`, igual que el resto del esquema.
+
+---
+
+## 17. Enlace público de descarga de facturas y recibos
+
+Nueva funcionalidad para **enviar por WhatsApp** la factura o el recibo en PDF sin que la persona
+tenga que iniciar sesión. Un Administrador o Tesorero genera un **enlace temporal** desde el
+backend, y ese enlace permite a cualquiera **descargar el PDF directamente** (solo lectura, sin
+login).
+
+### Cómo funciona
+
+| Método | Ruta | Quién | Descripción |
+|---|---|---|---|
+| `POST` | `/api/v1/facturas/{id}/public-link` | **Admin o Tesorero** | Genera (o renueva) el enlace público de esa factura. |
+| `POST` | `/api/v1/recibos/{numeroRecibo}/public-link` | **Admin o Tesorero** | Genera (o renueva) el enlace público de ese recibo. |
+| `GET` | `/api/v1/public/facturas/{token}` | **Público** (sin login) | Entrega el PDF de la factura listo para descargar. |
+| `GET` | `/api/v1/public/recibos/{token}` | **Público** (sin login) | Entrega el PDF del recibo listo para descargar. |
+
+> Para el recibo se usa `numeroRecibo` (igual que los endpoints existentes `.../pdf` y
+> `.../html`). Para la factura se usa el `id` numérico (igual que `.../pdf` y `.../html`).
+
+### Reglas implementadas
+
+- **Duración**: el enlace dura **72 horas** por defecto (configurable con la variable de entorno
+  `PUBLIC_LINK_EXPIRATION_HOURS`). Pasado ese tiempo el enlace **se borra definitivamente**.
+- **Un solo enlace activo por documento**: generar un enlace nuevo elimina el anterior del mismo
+  documento (no se acumulan enlaces viejos).
+- **El enlace público NO requiere iniciar sesión**: valida que el token exista, que no esté
+  vencido, que la factura/recibo exista y que **no esté anulado**. Si ya venció o no existe,
+  responde `404` con el mensaje **"Este enlace dejó de estar disponible."**
+- **Tarea automática**: cada día a las 00:40 el backend borra todos los enlaces vencidos
+  (además de borrarse al intentar usarlos si ya vencieron).
+
+### Ejemplo de la respuesta al generar el enlace
+
+```json
+{
+  "documentoId": 123,
+  "numeroDocumento": "F-00001",
+  "tipo": "FACTURA",
+  "publicDownloadUrl": "https://acueducto-losguaduales-server.onrender.com/api/v1/public/facturas/aB3xYz...",
+  "expiresAt": "2026-08-22T23:59:59"
+}
+```
+
+Para un recibo, `tipo` será `"RECIBO"`, `numeroDocumento` el número del recibo y
+`publicDownloadUrl` apuntará a `/api/v1/public/recibos/{token}`.
+
+### Nota técnica (por qué el enlace funciona aunque el servicio se duerma)
+
+Al igual que el hero y los formularios programados (secciones 1 y 9): la **vigencia se calcula en
+el momento de la descarga**, no depende de una tarea de fondo. Si Render apagó el servicio por
+inactividad, al abrir el enlace el backend arranca, compara `fechaExpiracion` con la hora actual
+y responde el PDF (o el mensaje de enlace vencido si ya pasó el plazo).
+
+### Para el frontend
+
+1. **Generar el enlace** (pantalla de Tesorería/Administración): en el detalle de una factura o
+   de un recibo, agregar un botón **"Compartir / Enviar por WhatsApp"** que llame a
+   `POST /api/v1/facturas/{id}/public-link` o `POST /api/v1/recibos/{numeroRecibo}/public-link`
+   con el Bearer token de Admin/Tesorero.
+2. **Enviarlo**: de la respuesta tomar `publicDownloadUrl` y abrir
+   `https://wa.me/?text=<publicDownloadUrl>` (o copiar el enlace para pegarlo donde quieran).
+3. **Vencimiento**: el campo `expiresAt` permite mostrar al lado del botón cuándo deja de servir
+   el enlace (por ejemplo "Vence: 22/08/2026").
+4. **Al abrir el enlace** (quien lo recibe): el navegador descarga el PDF automáticamente
+   (`Content-Disposition: attachment`). Si el enlace está vencido o no existe, el backend responde
+   un JSON de error `404` con el mensaje **"Este enlace dejó de estar disponible."** — si se quiere
+   mostrar una pantalla amigable en el frontend, puede usarse el mensaje del campo `mensaje` de la
+   respuesta de error estándar.
+
+> La tabla nueva (`enlaces_publicos_documentos`) se crea automáticamente con `ddl-auto: update`,
+> igual que el resto del esquema. No hace falta ejecutar nada manual en Supabase.

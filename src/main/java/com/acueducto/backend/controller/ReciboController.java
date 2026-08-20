@@ -1,13 +1,16 @@
 package com.acueducto.backend.controller;
 
+import com.acueducto.backend.dto.response.EnlacePublicoResponse;
 import com.acueducto.backend.dto.response.ReciboResponse;
 import com.acueducto.backend.entity.Recibo;
 import com.acueducto.backend.security.UserPrincipal;
 import com.acueducto.backend.service.DocumentoService;
+import com.acueducto.backend.service.EnlacePublicoService;
 import com.acueducto.backend.service.TesoreriaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +29,7 @@ public class ReciboController {
 
     private final TesoreriaService tesoreriaService;
     private final DocumentoService documentoService;
+    private final EnlacePublicoService enlacePublicoService;
 
     @Operation(summary = "Listar recibos de un asociado")
     @SecurityRequirement(name = "bearerAuth")
@@ -64,6 +68,23 @@ public class ReciboController {
     public ResponseEntity<ReciboResponse> consultarPorQr(@PathVariable String numeroRecibo) {
         Recibo recibo = tesoreriaService.obtenerReciboPorNumero(numeroRecibo);
         return ResponseEntity.ok(ReciboResponse.fromEntity(recibo));
+    }
+
+    @Operation(summary = "Generar enlace publico de descarga del recibo",
+            description = "Exclusivo de Administrador y Tesorero. Crea un enlace temporal (72 horas) que permite descargar el PDF del recibo SIN iniciar sesion, ideal para enviarlo por WhatsApp. Generar un enlace nuevo elimina el anterior del mismo documento.")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
+    @PostMapping("/{numeroRecibo}/public-link")
+    public ResponseEntity<EnlacePublicoResponse> generarEnlacePublico(@PathVariable String numeroRecibo, HttpServletRequest request) {
+        return ResponseEntity.ok(enlacePublicoService.generarEnlaceRecibo(numeroRecibo, construirBaseUrl(request)));
+    }
+
+    private String construirBaseUrl(HttpServletRequest request) {
+        String proto = request.getHeader("X-Forwarded-Proto");
+        if (proto == null || proto.isBlank()) {
+            proto = request.getScheme();
+        }
+        return proto + "://" + request.getHeader("Host");
     }
 
     private void verificarAcceso(Recibo recibo, UserPrincipal principal) {

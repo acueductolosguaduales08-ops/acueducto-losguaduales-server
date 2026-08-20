@@ -68,6 +68,10 @@ app:
     #   {base-url}/factura/{numero}
     #   {base-url}/recibo/{numero}
     #   {base-url}/encuestas?codigo={codigo}
+  public-link:
+    # Duracion de los enlaces publicos de descarga de facturas/recibos (72 horas por defecto).
+    # Pasado ese tiempo el enlace se borra definitivamente hasta crear uno nuevo.
+    expiration-hours: ${PUBLIC_LINK_EXPIRATION_HOURS:72}
 
 springdoc:
   api-docs:

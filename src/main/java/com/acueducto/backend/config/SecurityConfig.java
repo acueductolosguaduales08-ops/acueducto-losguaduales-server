@@ -51,6 +51,7 @@ public class SecurityConfig {
             "/storage/**",
             // Portal publico y consultas sin login (2.7 / 11.3)
             "/api/v1/publico/**",
+            "/api/v1/public/**",
             "/api/v1/consultas/**",
             "/api/v1/facturas/qr/**",
             "/api/v1/recibos/qr/**",

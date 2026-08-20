@@ -2,15 +2,18 @@ package com.acueducto.backend.controller;
 
 import com.acueducto.backend.dto.request.ConceptoFacturaRequest;
 import com.acueducto.backend.dto.request.GenerarFacturacionMesRequest;
+import com.acueducto.backend.dto.response.EnlacePublicoResponse;
 import com.acueducto.backend.dto.response.FacturaResponse;
 import com.acueducto.backend.entity.Factura;
 import com.acueducto.backend.entity.enums.EstadoFactura;
 import com.acueducto.backend.security.UserPrincipal;
 import com.acueducto.backend.service.DocumentoService;
+import com.acueducto.backend.service.EnlacePublicoService;
 import com.acueducto.backend.service.FacturaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +35,7 @@ public class FacturaController {
 
     private final FacturaService facturaService;
     private final DocumentoService documentoService;
+    private final EnlacePublicoService enlacePublicoService;
 
     @Operation(summary = "Generar facturacion del mes", description = "Procesa todas las lecturas pendientes del periodo y genera una factura por cada una (6.14).")
     @SecurityRequirement(name = "bearerAuth")
@@ -120,6 +124,23 @@ public class FacturaController {
     public ResponseEntity<FacturaResponse> consultarPorQr(@PathVariable String numeroFactura) {
         Factura factura = facturaService.obtenerPorNumero(numeroFactura);
         return ResponseEntity.ok(FacturaResponse.fromEntity(factura));
+    }
+
+    @Operation(summary = "Generar enlace publico de descarga de la factura",
+            description = "Exclusivo de Administrador y Tesorero. Crea un enlace temporal (72 horas) que permite descargar el PDF de la factura SIN iniciar sesion, ideal para enviarlo por WhatsApp. Generar un enlace nuevo elimina el anterior del mismo documento.")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
+    @PostMapping("/{id}/public-link")
+    public ResponseEntity<EnlacePublicoResponse> generarEnlacePublico(@PathVariable Long id, HttpServletRequest request) {
+        return ResponseEntity.ok(enlacePublicoService.generarEnlaceFactura(id, construirBaseUrl(request)));
+    }
+
+    private String construirBaseUrl(HttpServletRequest request) {
+        String proto = request.getHeader("X-Forwarded-Proto");
+        if (proto == null || proto.isBlank()) {
+            proto = request.getScheme();
+        }
+        return proto + "://" + request.getHeader("Host");
     }
 
     private void verificarAccesoAsociado(Factura factura, UserPrincipal principal) {

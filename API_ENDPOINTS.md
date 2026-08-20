@@ -1257,6 +1257,22 @@ _Endpoint publico usado al escanear el QR (7.11). El Tesorero puede continuar ha
 | `estado` | EstadoFactura |
 | `codigoQr` | String |
 
+### `POST /api/v1/facturas/{id}/public-link`
+**Generar enlace publico de descarga de la factura**
+_Exclusivo de Administrador y Tesorero. Crea un enlace temporal (72 horas) que permite descargar el PDF de la factura SIN iniciar sesion, ideal para enviarlo por WhatsApp. Generar un enlace nuevo elimina el anterior del mismo documento._
+- **Roles:** hasRole('ADMINISTRADOR') or hasRole('TESORERO')
+- **Path params:** `id` (Long)
+
+**Response body** (`EnlacePublicoResponse`):
+
+| Campo | Tipo |
+|---|---|
+| `documentoId` | Long |
+| `numeroDocumento` | String |
+| `tipo` | TipoDocumentoPublico (FACTURA/RECIBO) |
+| `publicDownloadUrl` | String (URL publica para compartir) |
+| `expiresAt` | LocalDateTime (vigencia del enlace) |
+
 
 ---
 
@@ -1522,6 +1538,22 @@ _Ingresos, gastos y balance del dia actual (8.10)._
 | `metodoPago` | String |
 | `estado` | EstadoRecibo |
 | `codigoQr` | String |
+
+### `POST /api/v1/recibos/{numeroRecibo}/public-link`
+**Generar enlace publico de descarga del recibo**
+_Exclusivo de Administrador y Tesorero. Crea un enlace temporal (72 horas) que permite descargar el PDF del recibo SIN iniciar sesion, ideal para enviarlo por WhatsApp. Generar un enlace nuevo elimina el anterior del mismo documento._
+- **Roles:** hasRole('ADMINISTRADOR') or hasRole('TESORERO')
+- **Path params:** `numeroRecibo` (String)
+
+**Response body** (`EnlacePublicoResponse`):
+
+| Campo | Tipo |
+|---|---|
+| `documentoId` | Long |
+| `numeroDocumento` | String |
+| `tipo` | TipoDocumentoPublico (FACTURA/RECIBO) |
+| `publicDownloadUrl` | String (URL publica para compartir) |
+| `expiresAt` | LocalDateTime (vigencia del enlace) |
 
 
 ---
@@ -2806,6 +2838,37 @@ _Definitivo. Exclusivo de `ADMINISTRADOR`/`TESORERO`; el asociado no puede usar 
 
 ---
 
+## 19. Enlaces publicos de documentos
+
+**Base path:** `/api/v1/public`
+
+Descarga publica (sin login) de facturas y recibos en PDF mediante un enlace temporal generado
+por Admin/Tesorero (`POST .../facturas/{id}/public-link` y `POST .../recibos/{numeroRecibo}/public-link`).
+Es el enlace que se envia por WhatsApp.
+
+Reglas: el enlace dura 72 horas (configurable, `PUBLIC_LINK_EXPIRATION_HOURS`); pasado ese tiempo
+se borra definitivamente. Generar uno nuevo elimina el anterior del mismo documento. Si el enlace
+no existe o ya vencio, el backend responde `404` con el mensaje **"Este enlace dejó de estar
+disponible."** Una factura o recibo anulado no se puede compartir.
+
+### `GET /api/v1/public/facturas/{token}`
+**Descargar factura publica via enlace temporal**
+_Valida token, vigencia y disponibilidad. Entrega el PDF listo para descargar (`Content-Disposition: attachment`)._
+- **Roles:** Publico (sin @PreAuthorize)
+- **Path params:** `token` (String)
+
+**Response body:** archivo binario (PDF, `application/pdf`).
+
+### `GET /api/v1/public/recibos/{token}`
+**Descargar recibo publico via enlace temporal**
+_Valida token, vigencia y disponibilidad. Entrega el PDF listo para descargar (`Content-Disposition: attachment`)._
+- **Roles:** Publico (sin @PreAuthorize)
+- **Path params:** `token` (String)
+
+**Response body:** archivo binario (PDF, `application/pdf`).
+
+---
+
 ## Apendice: Enums del dominio
 
 Estos son los valores exactos (`String` en JSON) que acepta o devuelve cada enum. Enviar cualquier otro valor produce un 400 de "Error de validacion" (JSON invalido para ese tipo).
@@ -2829,6 +2892,7 @@ Estos son los valores exactos (`String` en JSON) que acepta o devuelve cada enum
 | `TipoArchivoInstitucional` | `LOGO`, `FIRMA`, `SELLO` |
 | `TipoDocumento` | `CC`, `CE`, `TI`, `NIT`, `PASAPORTE` |
 | `TipoMovimiento` | `ENTRADA`, `SALIDA` |
+| `TipoDocumentoPublico` | `FACTURA`, `RECIBO` |
 | `TipoNotificacion` | `PUBLICA`, `ASOCIADO`, `ADMINISTRATIVA` |
 | `TipoPregunta` | `TEXTO_CORTO`, `TEXTO_LARGO`, `OPCION_UNICA`, `OPCION_MULTIPLE`, `ESCALA`, `SI_NO` |
 

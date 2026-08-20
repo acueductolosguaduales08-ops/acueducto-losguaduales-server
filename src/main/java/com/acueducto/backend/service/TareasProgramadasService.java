@@ -15,6 +15,7 @@ public class TareasProgramadasService {
     private final ReporteCiudadanoService reporteCiudadanoService;
     private final EncuestaService encuestaService;
     private final ChatService chatService;
+    private final EnlacePublicoService enlacePublicoService;
 
     /** Se ejecuta una vez al dia a las 00:10 y marca como VENCIDA toda factura pendiente fuera de plazo (2.11 / 7.5). */
     @Scheduled(cron = "0 10 0 * * *")
@@ -41,6 +42,12 @@ public class TareasProgramadasService {
         if (eliminados > 0) {
             log.info("Se eliminaron {} mensaje(s) de chat con mas de 8 dias de antiguedad.", eliminados);
         }
+    }
+
+    /** Se ejecuta una vez al dia a las 00:40 y borra definitivamente los enlaces publicos de facturas/recibos ya vencidos (72 horas). */
+    @Scheduled(cron = "0 40 0 * * *")
+    public void eliminarEnlacesPublicosVencidos() {
+        enlacePublicoService.eliminarExpirados();
     }
 
     /**
