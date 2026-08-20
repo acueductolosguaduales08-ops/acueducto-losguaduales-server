@@ -33,8 +33,7 @@ import org.springframework.context.annotation.Configuration;
                 contact = @Contact(name = "Acueducto Los Guaduales", email = "sistemas@acueductolosguaduales.com")
         ),
         servers = {
-                @Server(url = "http://localhost:8080", description = "Servidor local"),
-                @Server(url = "https://acueducto-losguaduales-server.onrender.com", description = "Servidor Render")
+                @Server(url = "/", description = "Servidor actual: usa el mismo origen desde donde se abre Swagger (funciona en local y en Render)")
         }
 )
 @SecurityScheme(

@@ -28,6 +28,7 @@ esperado y notas específicas para la UI donde aplica.
 15. [Listado general de asociados (HTML/PDF)](#15-listado-general-de-asociados-htmlpdf)
 16. [Chat interno (módulo nuevo)](#16-chat-interno-módulo-nuevo)
 17. [Enlace público de descarga de facturas y recibos](#17-enlace-público-de-descarga-de-facturas-y-recibos)
+18. [Corrección: Swagger "Failed to fetch" en Render](#18-corrección-swagger-failed-to-fetch-en-render)
 
 ---
 
@@ -726,3 +727,39 @@ y responde el PDF (o el mensaje de enlace vencido si ya pasó el plazo).
 
 > La tabla nueva (`enlaces_publicos_documentos`) se crea automáticamente con `ddl-auto: update`,
 > igual que el resto del esquema. No hace falta ejecutar nada manual en Supabase.
+
+---
+
+## 18. Corrección: Swagger "Failed to fetch" en Render
+
+**Síntoma:** Swagger funcionaba en local, pero en el servidor desplegado
+(`https://acueducto-losguaduales-server.onrender.com/swagger-ui/index.html`) al hacer clic en
+"Execute"/"Try it out" salía:
+
+```
+Failed to fetch.
+Possible Reasons:
+* CORS
+* Network Failure
+* URL scheme must be "http" or "https" for CORS request.
+```
+
+**Causa:** `OpenApiConfig` declaraba dos servidores fijos en el documento OpenAPI:
+`http://localhost:8080` (primero) y la URL de Render. Swagger UI usa **por defecto el primero**,
+así que desde el navegador del usuario los intentos de prueba se enviaban a `localhost:8080` de su
+propia máquina (o con un esquema incorrecto), y fallaban con "Failed to fetch". El frontend seguía
+funcionando porque no depende de esa lista de servidores.
+
+**Solución:** se reemplazaron los servidores fijos por un único servidor relativo:
+
+```java
+@Server(url = "/", description = "Servidor actual: usa el mismo origen desde donde se abre Swagger")
+```
+
+Con esto Swagger envía las llamadas de prueba **al mismo origen desde donde se abrió la UI**
+(local o Render), sin importar el esquema (http/https) ni el host. También se agregó
+`server.forward-headers-strategy: framework` para que Spring respete los headers `X-Forwarded-*`
+que envía el proxy de Render.
+
+**Para el frontend:** ningún cambio. Los endpoints siguen igual; esto solo afecta a la UI de
+Swagger en el servidor desplegado.
