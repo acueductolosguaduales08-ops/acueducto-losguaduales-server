@@ -135,4 +135,9 @@ public class Configuracion extends BaseEntity {
     @Builder.Default
     @Column(name = "auditoria_activa", nullable = false)
     private boolean auditoriaActiva = true;
+
+    /** Permite a los asociados editar sus propios datos personales desde su cuenta. */
+    @Builder.Default
+    @Column(name = "edicion_asociados_activa", nullable = false)
+    private boolean edicionAsociadosActiva = true;
 }

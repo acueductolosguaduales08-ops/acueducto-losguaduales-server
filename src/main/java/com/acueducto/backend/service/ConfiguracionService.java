@@ -81,6 +81,16 @@ public class ConfiguracionService {
         return ConfiguracionResponse.fromEntity(config);
     }
 
+    @Transactional
+    public ConfiguracionResponse cambiarEdicionAsociados(boolean activa) {
+        Configuracion config = obtenerEntidad();
+        config.setEdicionAsociadosActiva(activa);
+        config = configuracionRepository.save(config);
+        auditoriaService.registrar(activa ? "ACTIVAR_EDICION_ASOCIADOS" : "DESACTIVAR_EDICION_ASOCIADOS",
+                "CONFIGURACION", "edicion_asociados", null);
+        return ConfiguracionResponse.fromEntity(config);
+    }
+
     /** Numeracion consecutiva y atomica de facturas, recibos, entradas y salidas (4.9). */
     @Transactional
     public synchronized long siguienteNumeroFactura() {

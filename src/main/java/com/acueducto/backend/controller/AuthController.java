@@ -1,6 +1,7 @@
 package com.acueducto.backend.controller;
 
 import com.acueducto.backend.dto.request.*;
+import com.acueducto.backend.dto.response.AsociadoResponse;
 import com.acueducto.backend.dto.response.LoginResponse;
 import com.acueducto.backend.dto.response.UsuarioResponse;
 import com.acueducto.backend.service.AuthService;
@@ -87,5 +88,17 @@ public class AuthController {
             Authentication authentication,
             @Valid @RequestBody CambiarEstadoCuentaRequest request) {
         return ResponseEntity.ok(authService.cambiarEstadoCuenta(id, authentication.getName(), request));
+    }
+
+    @Operation(summary = "Actualizar mis datos de asociado", description = "Permite al asociado autenticado actualizar sus propios datos personales. "
+            + "La funcion debe estar habilitada por el Administrador. Puede editar: tipo de documento, documento, fecha de nacimiento, "
+            + "telefonos, correo, direccion y barrio/vereda. NO puede editar: medidor, nombre, apellidos ni fecha de afiliacion.")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ASOCIADO')")
+    @PutMapping("/perfil/datos")
+    public ResponseEntity<AsociadoResponse> actualizarDatosAsociado(
+            Authentication authentication,
+            @Valid @RequestBody ActualizarDatosAsociadoRequest request) {
+        return ResponseEntity.ok(authService.actualizarDatosAsociado(authentication.getName(), request));
     }
 }

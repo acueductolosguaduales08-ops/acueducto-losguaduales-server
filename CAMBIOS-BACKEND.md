@@ -30,6 +30,7 @@ esperado y notas específicas para la UI donde aplica.
 17. [Enlace público de descarga de facturas y recibos](#17-enlace-público-de-descarga-de-facturas-y-recibos)
 18. [Corrección: Swagger "Failed to fetch" en Render](#18-corrección-swagger-failed-to-fetch-en-render)
 19. [Bloqueo de cuentas de usuario](#19-bloqueo-de-cuentas-de-usuario)
+20. [Edición de datos personales por parte del asociado](#20-edición-de-datos-personales-por-parte-del-asociado)
 
 ---
 
@@ -585,6 +586,8 @@ vuelven a responder normalmente. No hay que ejecutar nada manual.
 | `GET` | `/public/facturas/{token}` | Nuevo — descarga pública del PDF de la factura, sin login |
 | `GET` | `/public/recibos/{token}` | Nuevo — descarga pública del PDF del recibo, sin login |
 | `PATCH` | `/auth/usuarios/{id}/estado` | Nuevo — activar o bloquear cuenta (solo Admin) |
+| `PUT` | `/auth/perfil/datos` | Nuevo — asociado edita sus propios datos personales |
+| `PATCH` | `/configuracion/edicion-asociados` | Nuevo — activar/desactivar edición de datos por asociados |
 
 Todo lo demás (Swagger UI incluido) se actualiza solo a partir de las anotaciones en el código —
 no hace falta ningún paso manual adicional para que aparezca documentado ahí.
@@ -902,3 +905,126 @@ primer arranque).
 4. **Cerrar sesión automáticamente**: cuando el frontend reciba un 403 del JWT filter (usuario
    bloqueado con sesión activa), debe limpiar el token del almacenamiento local y redirigir al
    login con el mensaje del bloqueo.
+
+---
+
+## 20. Edición de datos personales por parte del asociado
+
+### Descripción general
+
+Los asociados ahora pueden **editar sus propios datos personales** desde su cuenta, una vez que
+el Administrador habilite esta funcionalidad. Esto les permite mantener su información actualizada
+sin depender de un administrador o tesorero.
+
+### Campos que el asociado PUEDE editar
+
+| Campo | Tipo |
+|---|---|
+| Tipo de documento | Enum (`CC`, `CE`, `TI`, `NIT`, `PASAPORTE`) |
+| Número de documento | String |
+| Fecha de nacimiento | Fecha (`LocalDate`) |
+| Teléfono principal | String |
+| Teléfono alternativo | String |
+| Correo electrónico | String (formato email) |
+| Dirección | String |
+| Barrio/Vereda | String |
+
+### Campos que el asociado NO PUEDE editar
+
+| Campo | Razón |
+|---|---|
+| Nombre(s) | Dato administrativo, solo editable por Admin/Tesorero |
+| Apellido(s) | Dato administrativo, solo editable por Admin/Tesorero |
+| Fecha de afiliación | Dato fijo del sistema |
+| Medidor | Asignado por el administrador |
+
+### Toggle de activación (Administrador)
+
+El Administrador puede **activar o desactivar** esta funcionalidad para todos los asociados
+desde un solo interruptor:
+
+```
+PATCH /api/v1/configuracion/edicion-asociados?activa=true
+```
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `activa` | boolean | `true` para habilitar, `false` para deshabilitar |
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "id": 1,
+  "nombreAcueducto": "Acueducto Los Guaduales",
+  "edicionAsociadosActiva": true,
+  ...
+}
+```
+
+El estado actual también se puede consultar desde `GET /configuracion` (campo `edicionAsociadosActiva`).
+
+### Endpoint de autoedición: `PUT /api/v1/auth/perfil/datos`
+
+Exclusivo del rol **ASOCIADO**. Requiere token de autenticación.
+
+**Body:**
+
+```json
+{
+  "tipoDocumento": "CC",
+  "documento": "1234567890",
+  "fechaNacimiento": "1990-05-15",
+  "telefonoPrincipal": "300-123-4567",
+  "telefonoAlternativo": "300-987-6543",
+  "correo": "asociado@email.com",
+  "direccion": "Calle 10 #5-20",
+  "barrioVereda": "Vereda Los Guaduales"
+}
+```
+
+| Campo | Requerido | Descripción |
+|---|---|---|
+| `tipoDocumento` | Sí | Tipo de documento de identidad |
+| `documento` | Sí | Número de documento (debe ser único en el sistema) |
+| `fechaNacimiento` | No | Fecha de nacimiento |
+| `telefonoPrincipal` | No | Teléfono principal |
+| `telefonoAlternativo` | No | Teléfono alternativo |
+| `correo` | No | Correo electrónico (debe ser válido) |
+| `direccion` | Sí | Dirección de residencia |
+| `barrioVereda` | No | Barrio o vereda |
+
+**Respuesta exitosa (200):** devuelve el `AsociadoResponse` actualizado con todos los campos del asociado.
+
+**Errores posibles:**
+
+| Código | Causa |
+|---|---|
+| 422 | La edición de datos por parte de asociados está desactivada |
+| 422 | El número de documento ya está registrado en otro asociado |
+| 403 | El usuario autenticado no tiene rol ASOCIADO |
+
+### Campo nuevo en `configuracion`
+
+| Columna | Tipo | Default | Descripción |
+|---|---|---|---|
+| `edicion_asociados_activa` | BOOLEAN | `TRUE` | Controla si los asociados pueden editar sus datos |
+
+La tabla se actualiza automáticamente con `ddl-auto: update` (el `ConfiguracionSchemaMigrator`
+agrega la columna en el primer arranque si falta).
+
+### Para el frontend
+
+1. **Pantalla de perfil del asociado**: agregar un botón o enlace "Editar mis datos" que abra un
+   formulario con los campos permitidos. Pre-cargar los datos actuales del asociado
+   (`GET /asociados/{id}` con el id del asociado del JWT).
+2. **Al enviar**: llamar `PUT /auth/perfil/datos` con los campos editados. Si la respuesta es
+   exitosa, mostrar mensaje de éxito y actualizar los datos en la UI.
+3. **Si la función está desactivada**: el backend retorna 422 con "La edición de datos por parte
+   de asociados está desactivada." El frontend puede ocultar el botón de editar si al consultar
+   `GET /configuracion` el campo `edicionAsociadosActiva` es `false`.
+4. **Validación de documento único**: si el asociado cambia su número de documento y ya existe
+   otro con ese número, el backend retorna error 409 (conflicto). Mostrar el mensaje al usuario.
+5. **Administrador**: en la pantalla de Configuración, agregar un interruptor/switch para
+   "Permitir que los asociados editen sus datos" que llame a
+   `PATCH /configuracion/edicion-asociados?activa=true/false`.

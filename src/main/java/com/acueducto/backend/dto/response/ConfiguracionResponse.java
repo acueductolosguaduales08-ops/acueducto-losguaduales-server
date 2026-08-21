@@ -34,6 +34,7 @@ public class ConfiguracionResponse {
     private String logoActivo;
     private String firmaActiva;
     private String selloActivo;
+    private boolean edicionAsociadosActiva;
 
     public static ConfiguracionResponse fromEntity(Configuracion c) {
         return ConfiguracionResponse.builder()
@@ -46,6 +47,7 @@ public class ConfiguracionResponse {
                 .valorMultaDefecto(c.getValorMultaDefecto()).diasPlazoPago(c.getDiasPlazoPago())
                 .notasFactura(c.getNotasFactura()).logoActivo(c.getLogoActivo())
                 .firmaActiva(c.getFirmaActiva()).selloActivo(c.getSelloActivo())
+                .edicionAsociadosActiva(c.isEdicionAsociadosActiva())
                 .build();
     }
 }

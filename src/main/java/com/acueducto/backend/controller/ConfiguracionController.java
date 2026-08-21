@@ -92,4 +92,11 @@ public class ConfiguracionController {
     public ResponseEntity<List<ArchivoInstitucional>> listarArchivos(@PathVariable TipoArchivoInstitucional tipo) {
         return ResponseEntity.ok(configuracionService.listarArchivosPorTipo(tipo));
     }
+
+    @Operation(summary = "Activar/desactivar edicion de datos por parte de asociados", description = "Controla si los asociados pueden editar sus propios datos personales desde su cuenta.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PatchMapping("/edicion-asociados")
+    public ResponseEntity<ConfiguracionResponse> cambiarEdicionAsociados(@RequestParam boolean activa) {
+        return ResponseEntity.ok(configuracionService.cambiarEdicionAsociados(activa));
+    }
 }

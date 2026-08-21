@@ -1,18 +1,22 @@
 package com.acueducto.backend.service;
 
+import com.acueducto.backend.dto.request.ActualizarDatosAsociadoRequest;
 import com.acueducto.backend.dto.request.CambiarEstadoCuentaRequest;
 import com.acueducto.backend.dto.request.CambiarPasswordRequest;
 import com.acueducto.backend.dto.request.CrearUsuarioRequest;
 import com.acueducto.backend.dto.request.LoginRequest;
+import com.acueducto.backend.dto.response.AsociadoResponse;
 import com.acueducto.backend.dto.response.LoginResponse;
 import com.acueducto.backend.dto.response.UsuarioResponse;
 import com.acueducto.backend.entity.Asociado;
+import com.acueducto.backend.entity.Configuracion;
 import com.acueducto.backend.entity.Usuario;
 import com.acueducto.backend.entity.enums.Rol;
 import com.acueducto.backend.exception.RecursoDuplicadoException;
 import com.acueducto.backend.exception.RecursoNoEncontradoException;
 import com.acueducto.backend.exception.ReglaNegocioException;
 import com.acueducto.backend.repository.AsociadoRepository;
+import com.acueducto.backend.repository.ConfiguracionRepository;
 import com.acueducto.backend.repository.UsuarioRepository;
 import com.acueducto.backend.security.JwtService;
 import com.acueducto.backend.security.UserPrincipal;
@@ -39,6 +43,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UsuarioRepository usuarioRepository;
     private final AsociadoRepository asociadoRepository;
+    private final ConfiguracionRepository configuracionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuditoriaService auditoriaService;
@@ -243,5 +248,48 @@ public class AuthService {
 
         usuarioRepository.save(usuario);
         return UsuarioResponse.fromEntity(usuario);
+    }
+
+    /**
+     * Permite a un asociado actualizar sus propios datos personales. La funcion debe estar
+     * habilitada por el Administrador en Configuracion (edicionAsociadosActiva). Solo puede
+     * editar: tipoDocumento, documento, fechaNacimiento, telefonoPrincipal, telefonoAlternativo,
+     * correo, direccion, barrioVereda. NO puede editar: medidor, nombres, apellidos, fechaAfiliacion.
+     */
+    @Transactional
+    public AsociadoResponse actualizarDatosAsociado(String username, ActualizarDatosAsociadoRequest request) {
+        Configuracion config = configuracionRepository.findAll().stream().findFirst()
+                .orElse(null);
+        if (config != null && !config.isEdicionAsociadosActiva()) {
+            throw new ReglaNegocioException("La edicion de datos por parte de asociados esta desactivada. Contacte al administrador.");
+        }
+
+        Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        if (usuario.getRol() != Rol.ASOCIADO || usuario.getAsociado() == null) {
+            throw new ReglaNegocioException("Solo los asociados pueden editar sus propios datos.");
+        }
+
+        Asociado asociado = usuario.getAsociado();
+
+        if (!asociado.getDocumento().equals(request.documento())
+                && asociadoRepository.existsByDocumento(request.documento())) {
+            throw new RecursoDuplicadoException("Ya existe un asociado registrado con este documento.");
+        }
+
+        asociado.setTipoDocumento(request.tipoDocumento());
+        asociado.setDocumento(request.documento());
+        asociado.setFechaNacimiento(request.fechaNacimiento());
+        asociado.setTelefonoPrincipal(request.telefonoPrincipal());
+        asociado.setTelefonoAlternativo(request.telefonoAlternativo());
+        asociado.setCorreo(request.correo());
+        asociado.setDireccion(request.direccion());
+        asociado.setBarrioVereda(request.barrioVereda());
+
+        asociado = asociadoRepository.save(asociado);
+        auditoriaService.registrar("ACTUALIZAR_DATOS_ASOCIADO", "ASOCIADOS", asociado.getCodigoInterno(),
+                "Autoedicion por el asociado");
+        return AsociadoResponse.fromEntity(asociado, true);
     }
 }
