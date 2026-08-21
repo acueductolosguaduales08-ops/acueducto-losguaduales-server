@@ -43,6 +43,9 @@ public class Usuario extends BaseEntity {
     @Column(nullable = false)
     private boolean activo = true;
 
+    @Column(name = "motivo_bloqueo", length = 500)
+    private String motivoBloqueo;
+
     /** Solo aplica cuando rol = ASOCIADO: vincula la cuenta con su expediente de asociado. */
     @OneToOne
     @JoinColumn(name = "asociado_id")

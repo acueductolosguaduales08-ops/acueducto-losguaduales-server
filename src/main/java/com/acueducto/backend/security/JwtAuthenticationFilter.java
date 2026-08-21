@@ -1,5 +1,8 @@
 package com.acueducto.backend.security;
 
+import com.acueducto.backend.entity.Usuario;
+import com.acueducto.backend.repository.UsuarioRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Map;
 
 /** Intercepta cada peticion, valida el JWT (si existe) y establece el contexto de seguridad. */
 @Component
@@ -22,6 +26,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final UsuarioRepository usuarioRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -42,6 +48,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (jwtService.isTokenValid(jwt, userDetails)) {
+                Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(username).orElse(null);
+
+                if (usuario != null && !usuario.isActivo() && usuario.getId() != 1L) {
+                    String motivo = usuario.getMotivoBloqueo() != null ? usuario.getMotivoBloqueo() : "";
+                    String mensaje = "Lo sentimos, tu cuenta ha sido bloqueada por uno de nuestros administradores."
+                            + (motivo.isEmpty() ? "" : " Asunto: " + motivo);
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write(objectMapper.writeValueAsString(
+                            Map.of("mensaje", mensaje, "motivoBloqueo", motivo)));
+                    return;
+                }
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

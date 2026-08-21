@@ -1,5 +1,6 @@
 package com.acueducto.backend.service;
 
+import com.acueducto.backend.dto.request.CambiarEstadoCuentaRequest;
 import com.acueducto.backend.dto.request.CambiarPasswordRequest;
 import com.acueducto.backend.dto.request.CrearUsuarioRequest;
 import com.acueducto.backend.dto.request.LoginRequest;
@@ -54,8 +55,11 @@ public class AuthService {
         Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(request.username())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
-        if (!usuario.isActivo()) {
-            throw new ReglaNegocioException("El usuario se encuentra inactivo. Contacte al administrador.");
+        if (!usuario.isActivo() && usuario.getId() != 1L) {
+            String motivo = usuario.getMotivoBloqueo() != null ? usuario.getMotivoBloqueo() : "";
+            String mensaje = "Lo sentimos, tu cuenta ha sido bloqueada por uno de nuestros administradores."
+                    + (motivo.isEmpty() ? "" : " Asunto: " + motivo);
+            throw new ReglaNegocioException(mensaje);
         }
 
         UserPrincipal principal = new UserPrincipal(usuario);
@@ -89,6 +93,13 @@ public class AuthService {
         String username = jwtService.extractUsername(refreshToken);
         Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        if (!usuario.isActivo() && usuario.getId() != 1L) {
+            String motivo = usuario.getMotivoBloqueo() != null ? usuario.getMotivoBloqueo() : "";
+            String mensaje = "Lo sentimos, tu cuenta ha sido bloqueada por uno de nuestros administradores."
+                    + (motivo.isEmpty() ? "" : " Asunto: " + motivo);
+            throw new ReglaNegocioException(mensaje);
+        }
 
         UserPrincipal principal = new UserPrincipal(usuario);
         if (!jwtService.isTokenValid(refreshToken, principal)) {
@@ -186,5 +197,51 @@ public class AuthService {
         verificarPassword(usernameAdmin, password);
         auditoriaService.registrar("LISTAR_CUENTAS", "AUTENTICACION", usernameAdmin, null);
         return usuarioRepository.findAll().stream().map(UsuarioResponse::fromEntity).toList();
+    }
+
+    /**
+     * Activa o bloquea una cuenta de usuario. El primer administrador (id=1) nunca puede ser
+     * bloqueado. Se requiere la contrasena del administrador autenticado. Al bloquear, se
+     * almacena el motivo que se mostrara al usuario cuando intente iniciar sesion o si ya
+     * tiene sesion activa.
+     */
+    @Transactional
+    public UsuarioResponse cambiarEstadoCuenta(Long usuarioId, String usernameAdmin,
+                                                CambiarEstadoCuentaRequest request) {
+        verificarPassword(usernameAdmin, request.password());
+
+        Usuario admin = usuarioRepository.findByUsernameIgnoreCase(usernameAdmin)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Administrador no encontrado"));
+
+        if (admin.getRol() != Rol.ADMINISTRADOR) {
+            throw new ReglaNegocioException("Solo los administradores pueden cambiar el estado de cuentas.");
+        }
+
+        if (usuarioId.equals(admin.getId())) {
+            throw new ReglaNegocioException("No puedes cambiar el estado de tu propia cuenta.");
+        }
+
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        if (usuario.getId() == 1L) {
+            throw new ReglaNegocioException("La cuenta del administrador principal no puede ser bloqueada.");
+        }
+
+        boolean bloqueando = !usuario.isActivo();
+
+        if (bloqueando) {
+            usuario.setActivo(false);
+            usuario.setMotivoBloqueo(request.motivo() != null ? request.motivo() : "");
+            auditoriaService.registrar("BLOQUEAR_CUENTA", "AUTENTICACION", usuario.getUsername(),
+                    "Motivo: " + (request.motivo() != null ? request.motivo() : "Sin motivo"));
+        } else {
+            usuario.setActivo(true);
+            usuario.setMotivoBloqueo(null);
+            auditoriaService.registrar("DESACTIVAR_BLOQUEO_CUENTA", "AUTENTICACION", usuario.getUsername(), null);
+        }
+
+        usuarioRepository.save(usuario);
+        return UsuarioResponse.fromEntity(usuario);
     }
 }

@@ -29,6 +29,7 @@ esperado y notas específicas para la UI donde aplica.
 16. [Chat interno (módulo nuevo)](#16-chat-interno-módulo-nuevo)
 17. [Enlace público de descarga de facturas y recibos](#17-enlace-público-de-descarga-de-facturas-y-recibos)
 18. [Corrección: Swagger "Failed to fetch" en Render](#18-corrección-swagger-failed-to-fetch-en-render)
+19. [Bloqueo de cuentas de usuario](#19-bloqueo-de-cuentas-de-usuario)
 
 ---
 
@@ -583,6 +584,7 @@ vuelven a responder normalmente. No hay que ejecutar nada manual.
 | `POST` | `/recibos/{numeroRecibo}/public-link` | Nuevo — enlace público temporal del recibo (Admin o Tesorero) |
 | `GET` | `/public/facturas/{token}` | Nuevo — descarga pública del PDF de la factura, sin login |
 | `GET` | `/public/recibos/{token}` | Nuevo — descarga pública del PDF del recibo, sin login |
+| `PATCH` | `/auth/usuarios/{id}/estado` | Nuevo — activar o bloquear cuenta (solo Admin) |
 
 Todo lo demás (Swagger UI incluido) se actualiza solo a partir de las anotaciones en el código —
 no hace falta ningún paso manual adicional para que aparezca documentado ahí.
@@ -800,3 +802,103 @@ que envía el proxy de Render.
 
 **Para el frontend:** ningún cambio. Los endpoints siguen igual; esto solo afecta a la UI de
 Swagger en el servidor desplegado.
+
+---
+
+## 19. Bloqueo de cuentas de usuario
+
+### Descripción general
+
+Un Administrador puede **bloquear o activar** cualquier cuenta de usuario del sistema (excepto la
+cuenta del administrador principal, id=1, que nunca puede ser bloqueada). La afectación aplica a
+**todas las cuentas sin importar el rol** (admin, tesorero o asociado).
+
+### Comportamiento
+
+- **Activo**: el usuario usa el sistema normalmente (login, servicios, todo funciona).
+- **Bloqueado**:
+  - **No puede iniciar sesión**: al intentar hacer login, recibe un error con el motivo del bloqueo.
+  - **No puede usar ningún servicio**: si ya tenía sesión activa cuando fue bloqueado, el JWT
+    filter lo rechaza automáticamente con un 403 y el motivo del bloqueo.
+  - **El refresh token también se rechaza**: no puede renovar su token de acceso.
+
+### Endpoint nuevo: `PATCH /api/v1/auth/usuarios/{id}/estado`
+
+Exclusivo del **Administrador**. Activa o bloquea una cuenta.
+
+**Body:**
+
+```json
+{
+  "password": "contraseña_del_admin_logueado",
+  "motivo": "Mal uso de la plataforma"
+}
+```
+
+| Campo | Requerido | Descripción |
+|---|---|---|
+| `password` | Sí | Contraseña del administrador autenticado (reconfirmación de seguridad). |
+| `motivo` | No | Texto libre que se mostrará al usuario bloqueado. Si se omite o es null, se guarda vacío. |
+
+**Reglas:**
+
+- El administrador **no puede bloquear su propia cuenta** (devuelve error).
+- La cuenta del **administrador principal (id=1)** nunca puede ser bloqueada (devuelve error).
+- Solo usuarios con rol `ADMINISTRADOR` pueden usar este endpoint.
+- La contraseña se verifica aunque el admin ya tenga sesión iniciada.
+
+**Ejemplo de respuesta (éxito):**
+
+```json
+{
+  "id": 5,
+  "username": "tesorero1",
+  "email": "tesorero@acueducto.com",
+  "rol": "TESORERO",
+  "activo": false,
+  "asociadoId": null
+}
+```
+
+### Mensaje que recibe el usuario bloqueado
+
+**Al intentar iniciar sesión** (login o refresh), el backend retorna un error 422 con el
+siguiente formato:
+
+```json
+{
+  "mensaje": "Lo sentimos, tu cuenta ha sido bloqueada por uno de nuestros administradores. Asunto: Mal uso de la plataforma"
+}
+```
+
+**Al tener sesión activa y hacer cualquier petición** ( JWT filter), el backend retorna un 403:
+
+```json
+{
+  "mensaje": "Lo sentimos, tu cuenta ha sido bloqueada por uno de nuestros administradores. Asunto: Mal uso de la plataforma",
+  "motivoBloqueo": "Mal uso de la plataforma"
+}
+```
+
+### Campo nuevo en la entidad `usuarios`
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `motivo_bloqueo` | VARCHAR(500), nullable | Almacena el motivo del bloqueo. Se limpia al desbloquear. |
+
+La tabla se actualiza automáticamente con `ddl-auto: update` ( Hibernate agrega la columna en el
+primer arranque).
+
+### Para el frontend
+
+1. **Listado de cuentas** (`POST /auth/usuarios/listar`): ya muestra el campo `activo` de cada
+   cuenta. Puede usarlo para mostrar un indicador visual de estado (punto verde/rojo).
+2. **Botón de bloquear/desbloquear**: al lado de cada cuenta en el listado, agregar un botón que
+   abra un diálogo pidiendo:
+   - La contraseña del administrador (reconfirmación).
+   - Un motivo (obligatorio al bloquear, opcional al desbloquear).
+3. **Al recibir un 422 o 403** con `motivoBloqueo`: mostrar el mensaje al usuario en pantalla
+   (por ejemplo un modal o pantalla de "Tu cuenta ha sido bloqueada") con el motivo si existe.
+4. **Cerrar sesión automáticamente**: cuando el frontend reciba un 403 del JWT filter (usuario
+   bloqueado con sesión activa), debe limpiar el token del almacenamiento local y redirigir al
+   login con el mensaje del bloqueo.

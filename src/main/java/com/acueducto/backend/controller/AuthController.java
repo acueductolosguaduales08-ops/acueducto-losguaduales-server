@@ -76,4 +76,16 @@ public class AuthController {
                                                                            @Valid @RequestBody ConfirmarPasswordRequest request) {
         return ResponseEntity.ok(authService.listarUsuarios(authentication.getName(), request.password()));
     }
+
+    @Operation(summary = "Activar o bloquear una cuenta", description = "Exclusivo del Administrador. Activa o bloquea una cuenta de usuario. "
+            + "El primer administrador (id=1) nunca puede ser bloqueado. Se requiere la contrasena del administrador autenticado y un motivo al bloquear.")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PatchMapping("/usuarios/{id}/estado")
+    public ResponseEntity<UsuarioResponse> cambiarEstadoCuenta(
+            @PathVariable Long id,
+            Authentication authentication,
+            @Valid @RequestBody CambiarEstadoCuentaRequest request) {
+        return ResponseEntity.ok(authService.cambiarEstadoCuenta(id, authentication.getName(), request));
+    }
 }

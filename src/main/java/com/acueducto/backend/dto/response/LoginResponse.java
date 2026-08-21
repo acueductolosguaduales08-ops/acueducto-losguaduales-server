@@ -15,4 +15,5 @@ public class LoginResponse {
     private String tokenType;
     private Long expiresInMs;
     private UsuarioResponse usuario;
+    private String motivoBloqueo;
 }
