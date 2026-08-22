@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "03. Medidores", description = "Registro y administracion de medidores de agua (Modulo 6). Exclusivo del Administrador.")
+@Tag(name = "03. Medidores", description = "Registro y administracion de medidores de agua (Modulo 6). Administrador y Tesorero.")
 @RestController
 @RequestMapping("/api/v1/medidores")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasRole('ADMINISTRADOR')")
+@PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
 public class MedidorController {
 
     private final MedidorService medidorService;

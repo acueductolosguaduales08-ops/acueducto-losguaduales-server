@@ -1028,3 +1028,11 @@ agrega la columna en el primer arranque si falta).
 5. **Administrador**: en la pantalla de Configuración, agregar un interruptor/switch para
    "Permitir que los asociados editen sus datos" que llame a
    `PATCH /configuracion/edicion-asociados?activa=true/false`.
+
+
+## 21. al crear una cuenta  para asociado admin tesorero el campo correo cambio a contacto y acepta cualquier formato:
+
+### ejeplo
+
+- Correo: juan@gmail.com
+- Teléfono: 3101234567 o +57 310 123 4567
