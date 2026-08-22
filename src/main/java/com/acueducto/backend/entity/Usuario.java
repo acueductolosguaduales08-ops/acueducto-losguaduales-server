@@ -16,7 +16,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "usuarios", uniqueConstraints = {
         @UniqueConstraint(name = "uk_usuario_username", columnNames = "username"),
-        @UniqueConstraint(name = "uk_usuario_email", columnNames = "email")
+        @UniqueConstraint(name = "uk_usuario_contacto", columnNames = "contacto")
 })
 @Getter
 @Setter
@@ -33,7 +33,7 @@ public class Usuario extends BaseEntity {
     private String password;
 
     @Column(nullable = false, length = 150)
-    private String email;
+    private String contacto;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

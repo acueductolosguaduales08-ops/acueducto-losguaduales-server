@@ -51,6 +51,7 @@ public class ConfiguracionSchemaMigrator implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        renombrarColumnaEmailAContacto();
         for (ColumnaReparar columna : COLUMNAS) {
             if (!existeTabla(columna.tabla())) {
                 continue;
@@ -58,6 +59,22 @@ public class ConfiguracionSchemaMigrator implements ApplicationRunner {
             reparar(columna);
         }
         log.info("Esquema verificado: columnas NOT NULL faltantes reparadas si hacia falta.");
+    }
+
+    private void renombrarColumnaEmailAContacto() {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.columns WHERE LOWER(table_name) = 'usuarios' AND LOWER(column_name) = 'email'",
+                    Integer.class);
+            if (count != null && count > 0) {
+                jdbcTemplate.execute("ALTER TABLE usuarios RENAME COLUMN email TO contacto");
+                jdbcTemplate.execute("ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS uk_usuario_email");
+                jdbcTemplate.execute("ALTER TABLE usuarios ADD CONSTRAINT uk_usuario_contacto UNIQUE (contacto)");
+                log.info("Columna 'email' renombrada a 'contacto' en tabla usuarios.");
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo renombrar email a contacto: {}", e.getMessage());
+        }
     }
 
     private void reparar(ColumnaReparar columna) {

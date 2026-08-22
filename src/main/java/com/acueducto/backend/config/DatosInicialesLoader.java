@@ -81,7 +81,7 @@ public class DatosInicialesLoader implements CommandLineRunner {
         Usuario admin = Usuario.builder()
                 .username("admin")
                 .password(passwordEncoder.encode("Admin#2026"))
-                .email("admin@acueductolosguaduales.com")
+                .contacto("admin@acueductolosguaduales.com")
                 .rol(Rol.ADMINISTRADOR)
                 .activo(true)
                 .build();

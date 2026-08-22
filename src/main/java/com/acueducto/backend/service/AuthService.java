@@ -130,8 +130,8 @@ public class AuthService {
         if (usuarioRepository.existsByUsernameIgnoreCase(request.username())) {
             throw new RecursoDuplicadoException("El nombre de usuario ya esta en uso.");
         }
-        if (usuarioRepository.existsByEmailIgnoreCase(request.email())) {
-            throw new RecursoDuplicadoException("El correo ya esta registrado.");
+        if (usuarioRepository.existsByContactoIgnoreCase(request.contacto())) {
+            throw new RecursoDuplicadoException("El correo o telefono ya esta registrado.");
         }
 
         Asociado asociado = null;
@@ -146,7 +146,7 @@ public class AuthService {
         Usuario usuario = Usuario.builder()
                 .username(request.username())
                 .password(passwordEncoder.encode(request.password()))
-                .email(request.email())
+                .contacto(request.contacto())
                 .rol(request.rol())
                 .activo(true)
                 .asociado(asociado)

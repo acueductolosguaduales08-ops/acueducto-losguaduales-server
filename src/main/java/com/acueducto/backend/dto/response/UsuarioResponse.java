@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class UsuarioResponse {
     private Long id;
     private String username;
-    private String email;
+    private String contacto;
     private Rol rol;
     private boolean activo;
     private Long asociadoId;
@@ -23,7 +23,7 @@ public class UsuarioResponse {
         return UsuarioResponse.builder()
                 .id(u.getId())
                 .username(u.getUsername())
-                .email(u.getEmail())
+                .contacto(u.getContacto())
                 .rol(u.getRol())
                 .activo(u.isActivo())
                 .asociadoId(u.getAsociado() != null ? u.getAsociado().getId() : null)
