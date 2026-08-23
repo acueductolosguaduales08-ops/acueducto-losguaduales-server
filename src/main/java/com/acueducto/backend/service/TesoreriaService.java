@@ -325,6 +325,12 @@ public class TesoreriaService {
         return reciboRepository.findByAsociadoId(asociadoId, pageable).map(ReciboResponse::fromEntity);
     }
 
+    public List<ReciboResponse> listarTodosLosRecibos() {
+        return reciboRepository.findAllByOrderByFechaEmisionDesc().stream()
+                .map(ReciboResponse::fromEntity)
+                .toList();
+    }
+
     public Recibo obtenerReciboPorNumero(String numeroRecibo) {
         return reciboRepository.findByNumeroRecibo(numeroRecibo)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Recibo no encontrado: " + numeroRecibo));

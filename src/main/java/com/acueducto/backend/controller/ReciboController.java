@@ -39,6 +39,14 @@ public class ReciboController {
         return ResponseEntity.ok(tesoreriaService.listarRecibosPorAsociado(asociadoId, pageable));
     }
 
+    @Operation(summary = "Listar todos los recibos")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
+    @GetMapping("/todos")
+    public ResponseEntity<java.util.List<ReciboResponse>> listarTodos() {
+        return ResponseEntity.ok(tesoreriaService.listarTodosLosRecibos());
+    }
+
     @Operation(summary = "Ver recibo en HTML")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO') or hasRole('ASOCIADO')")
