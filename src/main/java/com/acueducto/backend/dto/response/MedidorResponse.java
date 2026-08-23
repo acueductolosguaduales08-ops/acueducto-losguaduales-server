@@ -22,6 +22,7 @@ public class MedidorResponse {
     private LocalDate fechaInstalacion;
     private EstadoMedidor estado;
     private String ubicacion;
+    private Integer ultimaLectura;
 
     public static MedidorResponse fromEntity(Medidor m) {
         return MedidorResponse.builder()
@@ -33,6 +34,20 @@ public class MedidorResponse {
                 .fechaInstalacion(m.getFechaInstalacion())
                 .estado(m.getEstado())
                 .ubicacion(m.getUbicacion())
+                .build();
+    }
+
+    public static MedidorResponse fromEntity(Medidor m, Integer ultimaLectura) {
+        return MedidorResponse.builder()
+                .id(m.getId())
+                .codigoInterno(m.getCodigoInterno())
+                .numero(m.getNumero())
+                .asociadoId(m.getAsociado() != null ? m.getAsociado().getId() : null)
+                .asociadoNombre(m.getAsociado() != null ? m.getAsociado().getNombres() + " " + m.getAsociado().getApellidos() : null)
+                .fechaInstalacion(m.getFechaInstalacion())
+                .estado(m.getEstado())
+                .ubicacion(m.getUbicacion())
+                .ultimaLectura(ultimaLectura)
                 .build();
     }
 }

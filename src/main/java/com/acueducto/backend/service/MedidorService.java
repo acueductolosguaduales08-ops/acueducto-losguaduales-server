@@ -3,12 +3,14 @@ package com.acueducto.backend.service;
 import com.acueducto.backend.dto.request.MedidorRequest;
 import com.acueducto.backend.dto.response.MedidorResponse;
 import com.acueducto.backend.entity.Asociado;
+import com.acueducto.backend.entity.Lectura;
 import com.acueducto.backend.entity.Medidor;
 import com.acueducto.backend.entity.enums.EstadoMedidor;
 import com.acueducto.backend.exception.RecursoDuplicadoException;
 import com.acueducto.backend.exception.RecursoNoEncontradoException;
 import com.acueducto.backend.exception.ReglaNegocioException;
 import com.acueducto.backend.repository.AsociadoRepository;
+import com.acueducto.backend.repository.LecturaRepository;
 import com.acueducto.backend.repository.MedidorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ public class MedidorService {
 
     private final MedidorRepository medidorRepository;
     private final AsociadoRepository asociadoRepository;
+    private final LecturaRepository lecturaRepository;
     private final AuditoriaService auditoriaService;
 
     @Transactional
@@ -77,7 +80,9 @@ public class MedidorService {
     }
 
     public MedidorResponse obtener(Long id) {
-        return MedidorResponse.fromEntity(obtenerEntidad(id));
+        Medidor medidor = obtenerEntidad(id);
+        Integer ultimaLectura = obtenerUltimaLectura(medidor.getId());
+        return MedidorResponse.fromEntity(medidor, ultimaLectura);
     }
 
     public Medidor obtenerEntidad(Long id) {
@@ -86,6 +91,17 @@ public class MedidorService {
     }
 
     public List<MedidorResponse> listar() {
-        return medidorRepository.findAll().stream().map(MedidorResponse::fromEntity).toList();
+        return medidorRepository.findAll().stream()
+                .map(m -> {
+                    Integer ultimaLectura = obtenerUltimaLectura(m.getId());
+                    return MedidorResponse.fromEntity(m, ultimaLectura);
+                })
+                .toList();
+    }
+
+    private Integer obtenerUltimaLectura(Long medidorId) {
+        return lecturaRepository.findTopByMedidorIdOrderByFechaLecturaDesc(medidorId)
+                .map(Lectura::getLecturaActual)
+                .orElse(null);
     }
 }
