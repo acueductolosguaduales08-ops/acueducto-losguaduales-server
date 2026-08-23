@@ -14,7 +14,7 @@ public record AsociadoRequest(
         @NotBlank @Size(max = 100) String nombres,
         @NotBlank @Size(max = 100) String apellidos,
         LocalDate fechaNacimiento,
-        @NotBlank @Size(max = 20) String telefonoPrincipal,
+        @Size(max = 20) String telefonoPrincipal,
         @Size(max = 20) String telefonoAlternativo,
         @Email @Size(max = 150) String correo,
         @NotBlank @Size(max = 200) String direccion,
