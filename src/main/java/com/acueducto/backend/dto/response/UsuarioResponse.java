@@ -18,6 +18,7 @@ public class UsuarioResponse {
     private Rol rol;
     private boolean activo;
     private Long asociadoId;
+    private String asociadoNombre;
 
     public static UsuarioResponse fromEntity(Usuario u) {
         return UsuarioResponse.builder()
@@ -27,6 +28,9 @@ public class UsuarioResponse {
                 .rol(u.getRol())
                 .activo(u.isActivo())
                 .asociadoId(u.getAsociado() != null ? u.getAsociado().getId() : null)
+                .asociadoNombre(u.getAsociado() != null
+                        ? (u.getAsociado().getNombres() + " " + u.getAsociado().getApellidos()).trim()
+                        : null)
                 .build();
     }
 }
