@@ -5,6 +5,7 @@ import com.acueducto.backend.dto.request.CrearMensajeRequest;
 import com.acueducto.backend.dto.request.EditarMensajeRequest;
 import com.acueducto.backend.dto.response.ConversacionResponse;
 import com.acueducto.backend.dto.response.MensajeResponse;
+import com.acueducto.backend.dto.response.ParticipanteResponse;
 import com.acueducto.backend.dto.response.SolicitudEliminacionResponse;
 import com.acueducto.backend.security.UserPrincipal;
 import com.acueducto.backend.service.ChatService;
@@ -37,6 +38,14 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
+
+    @Operation(summary = "Contactos disponibles para chat",
+            description = "Devuelve la lista de usuarios con los que el autenticado puede iniciar una conversacion. Admin/Tesorero ven asociados; Asociado ve administradores y tesoreros.")
+    @GetMapping("/contactos")
+    public ResponseEntity<List<ParticipanteResponse>> obtenerContactos(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(chatService.obtenerContactos(principal.getId()));
+    }
 
     @Operation(summary = "Crear u obtener conversacion",
             description = "Crea una conversacion con el usuario destinatario, o devuelve la existente si ya hay una entre ambos. Nunca se crean conversaciones duplicadas.")

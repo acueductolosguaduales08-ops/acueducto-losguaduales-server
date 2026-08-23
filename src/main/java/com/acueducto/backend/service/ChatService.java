@@ -59,6 +59,24 @@ public class ChatService {
     // ==================== CONVERSACIONES ====================
 
     /**
+     * Devuelve los contactos disponibles para iniciar una conversacion.
+     * Admin/Tesorero ven los asociados; el asociado ve administradores y tesoreros.
+     */
+    public List<ParticipanteResponse> obtenerContactos(Long usuarioActualId) {
+        Usuario actual = obtenerUsuario(usuarioActualId);
+        List<Rol> rolesContactos;
+        if (actual.getRol() == Rol.ASOCIADO) {
+            rolesContactos = List.of(Rol.ADMINISTRADOR, Rol.TESORERO);
+        } else {
+            rolesContactos = List.of(Rol.ASOCIADO);
+        }
+        return usuarioRepository.findByRolInAndActivoTrue(rolesContactos).stream()
+                .filter(u -> !u.getId().equals(usuarioActualId))
+                .map(ParticipanteResponse::fromUsuario)
+                .toList();
+    }
+
+    /**
      * Crea una conversacion con el destinatario, o devuelve la existente si la pareja
      * ya tiene una. Nunca se crean conversaciones duplicadas entre los mismos usuarios.
      */
