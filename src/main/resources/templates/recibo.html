@@ -230,9 +230,14 @@
             color: #237d32;
         }
 
-        /* ================================
-           TABLAS
-        ================================= */
+        .seccion-titulo.multa {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .estado-EMITIDO { background-color: #2e7d32; }
+        .estado-EMITIDO.multa { background-color: #d97706; }
+        .estado-ANULADO { background-color: #c62828; }
 
         table {
             width: 100%;
@@ -277,10 +282,19 @@
             text-align: center;
         }
 
+        .valor-recibido.multa {
+            background: #fef3c7;
+            border-color: #fcd34d;
+        }
+
         .valor-recibido .valor {
             color: #237d32;
             font-size: 24px;
             font-weight: 700;
+        }
+
+        .valor-recibido.multa .valor {
+            color: #d97706;
         }
 
         .valor-recibido .saldo {
@@ -532,12 +546,12 @@
         <div class="titulo" th:classappend="${esMultaIndependiente} ? ' multa' : ''">
             <h2 th:text="${esMultaIndependiente} ? 'PAGO MULTA INDEPENDIENTE' : 'RECIBO DE PAGO'">RECIBO DE PAGO</h2>
             <div class="numero-recibo" th:classappend="${esMultaIndependiente} ? ' multa' : ''" th:text="${recibo.numeroRecibo}">REC-000001</div>
-            <span th:class="'estado estado-' + ${recibo.estado}" th:text="${recibo.estado}">EMITIDO</span>
+            <span th:class="'estado estado-' + ${recibo.estado} + (${esMultaIndependiente} ? ' multa' : '')" th:text="${recibo.estado}">EMITIDO</span>
         </div>
 
         <!-- INFORMACION DEL PAGO -->
         <div class="seccion">
-            <div class="seccion-titulo">INFORMACION DEL PAGO</div>
+            <div class="seccion-titulo" th:classappend="${esMultaIndependiente} ? ' multa' : ''">INFORMACION DEL PAGO</div>
             <table class="tabla-info">
                 <tr>
                     <td class="label">Fecha de emision</td>
@@ -562,8 +576,8 @@
 
         <!-- VALOR RECIBIDO -->
         <div class="seccion">
-            <div class="seccion-titulo">VALOR RECIBIDO</div>
-            <div class="valor-recibido">
+            <div class="seccion-titulo" th:classappend="${esMultaIndependiente} ? ' multa' : ''">VALOR RECIBIDO</div>
+            <div class="valor-recibido" th:classappend="${esMultaIndependiente} ? ' multa' : ''">
                 <div class="valor" th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(recibo.valor)}">$282.000</div>
                 <div class="saldo" th:if="${recibo.saldoPendiente != null and recibo.saldoPendiente.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
                     Saldo pendiente de la factura: <b th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(recibo.saldoPendiente)}">$0</b>
