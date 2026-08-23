@@ -233,7 +233,7 @@ public class AuthService {
             throw new ReglaNegocioException("La cuenta del administrador principal no puede ser bloqueada.");
         }
 
-        boolean bloqueando = !usuario.isActivo();
+        boolean bloqueando = usuario.isActivo();
 
         if (bloqueando) {
             usuario.setActivo(false);
