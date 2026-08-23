@@ -443,6 +443,13 @@ public class TesoreriaService {
         return multaRepository.findByAsociadoId(asociadoId).stream().map(MultaResponse::fromEntity).toList();
     }
 
+    public List<MovimientoTesoreriaResponse> listarMovimientosPorAsociado(Long asociadoId) {
+        return movimientoTesoreriaRepository.findByAsociadoId(asociadoId).stream()
+                .sorted((a, b) -> b.getFecha().compareTo(a.getFecha()))
+                .map(MovimientoTesoreriaResponse::fromEntity)
+                .toList();
+    }
+
     private Usuario usuarioActual() {
         UserPrincipal principal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return usuarioRepository.findById(principal.getId())
