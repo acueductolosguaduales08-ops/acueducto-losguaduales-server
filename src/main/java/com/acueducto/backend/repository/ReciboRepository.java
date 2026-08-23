@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface ReciboRepository extends JpaRepository<Recibo, Long> {
     Optional<Recibo> findByNumeroRecibo(String numeroRecibo);
     Optional<Recibo> findByPagoId(Long pagoId);
+    Optional<Recibo> findByPagoMultaId(Long multaId);
     Page<Recibo> findByAsociadoId(Long asociadoId, Pageable pageable);
     List<Recibo> findAllByOrderByFechaEmisionDesc();
 }

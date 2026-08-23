@@ -3,6 +3,7 @@ package com.acueducto.backend.service;
 import com.acueducto.backend.dto.request.MovimientoTesoreriaRequest;
 import com.acueducto.backend.dto.request.EditarValorMultaRequest;
 import com.acueducto.backend.dto.request.MultaRequest;
+import com.acueducto.backend.dto.request.PagarMultaRequest;
 import com.acueducto.backend.dto.request.RegistrarPagoRequest;
 import com.acueducto.backend.dto.response.*;
 import com.acueducto.backend.entity.*;
@@ -175,12 +176,12 @@ public class TesoreriaService {
     }
 
     /**
-     * Pago directo de una multa independiente (aparte): no genera recibo ni movimiento de
-     * factura, solo marca la multa como PAGADA. Las multas normales (no independientes) se
-     * pagan junto con su factura, a traves de registrarPago.
+     * Pago directo de una multa independiente (aparte): crea movimiento financiero (ENTRADA)
+     * para que quede registrado en caja, movimientos e informes. Las multas normales (no
+     * independientes) se pagan junto con su factura, a traves de registrarPago.
      */
     @Transactional
-    public MultaResponse pagarMultaIndependiente(Long id) {
+    public MultaResponse pagarMultaIndependiente(Long id, PagarMultaRequest request) {
         Multa multa = multaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada con id " + id));
         if (!multa.isIndependiente()) {
@@ -193,9 +194,65 @@ public class TesoreriaService {
         if (multa.getEstado() == EstadoMulta.ANULADA) {
             throw new ReglaNegocioException("Esta multa esta anulada y no se puede pagar.");
         }
+
+        MetodoPago metodoPago = metodoPagoRepository.findById(request.metodoPagoId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Metodo de pago no encontrado"));
+
+        MesContable mes = mesContableRepository.findFirstByEstadoOrderByFechaAperturaDesc(EstadoMes.ABIERTO)
+                .orElseThrow(() -> new ReglaNegocioException("No hay un periodo contable abierto para registrar este pago."));
+
+        Usuario tesorero = usuarioActual();
+
+        // 1: marcar multa como pagada
         multa.setEstado(EstadoMulta.PAGADA);
         multa = multaRepository.save(multa);
-        auditoriaService.registrar("PAGAR_MULTA_INDEPENDIENTE", "TESORERIA", multa.getAsociado().getDocumento(), multa.getMotivo());
+
+        // 2: registrar el pago (factura=null porque es multa independiente)
+        Pago pago = Pago.builder()
+                .factura(null)
+                .multa(multa)
+                .asociado(multa.getAsociado())
+                .valor(multa.getValor())
+                .fecha(LocalDateTime.now())
+                .metodoPago(metodoPago)
+                .tesorero(tesorero)
+                .observaciones("Multa independiente: " + multa.getMotivo())
+                .anulado(false)
+                .build();
+        pago = pagoRepository.save(pago);
+
+        // 3: generar recibo
+        long consecutivoRecibo = configuracionService.siguienteNumeroRecibo();
+        String numeroRecibo = NumeracionUtil.formatearRecibo(consecutivoRecibo);
+
+        Recibo recibo = Recibo.builder()
+                .numeroRecibo(numeroRecibo)
+                .pago(pago)
+                .factura(null)
+                .asociado(multa.getAsociado())
+                .fechaEmision(LocalDateTime.now())
+                .valor(multa.getValor())
+                .saldoPendiente(BigDecimal.ZERO)
+                .estado(EstadoRecibo.EMITIDO)
+                .build();
+        recibo = reciboRepository.save(recibo);
+        recibo.setCodigoQr(qrCodeService.generarQrRecibo(recibo.getNumeroRecibo()));
+        recibo = reciboRepository.save(recibo);
+
+        // 4: crear el movimiento financiero (entrada) vinculado al recibo
+        MovimientoTesoreria movimiento = crearMovimiento(
+                TipoMovimiento.ENTRADA, multa.getValor(), metodoPago,
+                "Pago multa independiente: " + multa.getMotivo(), "PAGO_MULTA",
+                multa.getAsociado(), null, recibo, mes, tesorero, null);
+
+        // 5: notificacion
+        notificacionService.notificarPagoRegistrado(recibo);
+
+        // 6: auditoria
+        auditoriaService.registrar("PAGAR_MULTA_INDEPENDIENTE", "TESORERIA",
+                multa.getAsociado().getDocumento(),
+                "Recibo " + numeroRecibo + " - Valor $" + multa.getValor() + " - " + multa.getMotivo());
+
         return MultaResponse.fromEntity(multa);
     }
 
@@ -289,6 +346,47 @@ public class TesoreriaService {
     public void anularMovimiento(Long id, String motivo) {
         MovimientoTesoreria movimiento = movimientoTesoreriaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Movimiento no encontrado"));
+
+        if (movimiento.isAnulado()) {
+            throw new ReglaNegocioException("Este movimiento ya esta anulado.");
+        }
+
+        // Si es un pago de factura, reversar efectos financieros
+        if ("PAGO_FACTURA".equals(movimiento.getCategoria()) && movimiento.getRecibo() != null) {
+            Recibo recibo = movimiento.getRecibo();
+            Pago pago = recibo.getPago();
+
+            // Anular el pago
+            if (pago != null && !pago.isAnulado()) {
+                pago.setAnulado(true);
+                pagoRepository.save(pago);
+            }
+
+            // Anular el recibo
+            recibo.setEstado(EstadoRecibo.ANULADO);
+            reciboRepository.save(recibo);
+
+            // Recalcular totalPagado y estado de la factura
+            if (movimiento.getFactura() != null) {
+                Factura factura = movimiento.getFactura();
+                BigDecimal totalPagado = pagoRepository.findByFacturaId(factura.getId()).stream()
+                        .filter(p -> !p.isAnulado())
+                        .map(Pago::getValor)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                factura.setTotalPagado(totalPagado);
+
+                BigDecimal saldo = factura.getSaldoPendiente();
+                if (saldo.compareTo(BigDecimal.ZERO) <= 0) {
+                    factura.setEstado(EstadoFactura.PAGADA);
+                } else if (factura.getTotalPagado().compareTo(BigDecimal.ZERO) > 0) {
+                    factura.setEstado(EstadoFactura.PAGADA_PARCIAL);
+                } else {
+                    factura.setEstado(EstadoFactura.PENDIENTE);
+                }
+                facturaRepository.save(factura);
+            }
+        }
+
         movimiento.setAnulado(true);
         movimientoTesoreriaRepository.save(movimiento);
         auditoriaService.registrar("ANULAR_MOVIMIENTO", "TESORERIA", movimiento.getId().toString(), motivo);
@@ -334,6 +432,11 @@ public class TesoreriaService {
     public Recibo obtenerReciboPorNumero(String numeroRecibo) {
         return reciboRepository.findByNumeroRecibo(numeroRecibo)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Recibo no encontrado: " + numeroRecibo));
+    }
+
+    public Recibo obtenerReciboPorMulta(Long multaId) {
+        return reciboRepository.findByPagoMultaId(multaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontro recibo para la multa con id " + multaId));
     }
 
     public List<MultaResponse> listarMultasPorAsociado(Long asociadoId) {

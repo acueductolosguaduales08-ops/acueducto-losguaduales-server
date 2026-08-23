@@ -27,8 +27,8 @@ public class Recibo extends BaseEntity {
     @JoinColumn(name = "pago_id", nullable = false)
     private Pago pago;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "factura_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "factura_id", nullable = true)
     private Factura factura;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

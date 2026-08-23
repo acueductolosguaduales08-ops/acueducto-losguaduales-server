@@ -93,6 +93,7 @@ public class DocumentoService {
         context.setVariable("recibo", recibo);
         context.setVariable("pago", recibo.getPago());
         context.setVariable("factura", recibo.getFactura());
+        context.setVariable("esMultaIndependiente", recibo.getFactura() == null);
         context.setVariable("asociado", recibo.getAsociado());
         context.setVariable("config", config);
         agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO_RECIBO, LOGO_CAJA_ALTO_RECIBO, true);

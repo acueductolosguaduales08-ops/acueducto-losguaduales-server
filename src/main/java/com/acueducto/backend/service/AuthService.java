@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -132,6 +133,14 @@ public class AuthService {
         }
         if (usuarioRepository.existsByContactoIgnoreCase(request.contacto())) {
             throw new RecursoDuplicadoException("El correo o telefono ya esta registrado.");
+        }
+
+        // Seguridad: un tesorero solo puede crear cuentas con rol ASOCIADO
+        UserPrincipal principal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Usuario creador = usuarioRepository.findById(principal.getId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no encontrado"));
+        if (creador.getRol() == Rol.TESORERO && request.rol() != Rol.ASOCIADO) {
+            throw new ReglaNegocioException("Solo puede crear cuentas con rol ASOCIADO.");
         }
 
         Asociado asociado = null;

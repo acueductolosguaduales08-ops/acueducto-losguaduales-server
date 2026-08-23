@@ -196,7 +196,7 @@ public class InformeService {
                 .sorted((a, b) -> b.getFecha().compareTo(a.getFecha()))
                 .map(p -> InformeAsociadoResponse.PagoResumenItem.builder()
                         .numeroRecibo(reciboRepository.findByPagoId(p.getId()).map(Recibo::getNumeroRecibo).orElse("-"))
-                        .numeroFactura(p.getFactura().getNumeroFactura())
+                        .numeroFactura(p.getFactura() != null ? p.getFactura().getNumeroFactura() : "-")
                         .valor(p.getValor())
                         .fecha(p.getFecha())
                         .metodoPago(p.getMetodoPago().getNombre())

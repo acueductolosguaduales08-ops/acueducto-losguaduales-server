@@ -78,7 +78,7 @@ public class NotificacionService {
         Usuario destinatario = usuarioRepository.findByAsociadoId(recibo.getAsociado().getId()).orElse(null);
         crearNotificacionAutomatica(
                 "Pago registrado",
-                "Se registro un pago sobre la factura " + recibo.getFactura().getNumeroFactura(),
+                "Se registro un pago" + (recibo.getFactura() != null ? " sobre la factura " + recibo.getFactura().getNumeroFactura() : ""),
                 "Su pago fue registrado correctamente. Recibo " + recibo.getNumeroRecibo()
                         + " por valor de $" + recibo.getValor() + ".",
                 destinatario, "/recibo/" + recibo.getNumeroRecibo());

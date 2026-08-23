@@ -3,6 +3,7 @@ package com.acueducto.backend.controller;
 import com.acueducto.backend.dto.request.EditarValorMultaRequest;
 import com.acueducto.backend.dto.request.MovimientoTesoreriaRequest;
 import com.acueducto.backend.dto.request.MultaRequest;
+import com.acueducto.backend.dto.request.PagarMultaRequest;
 import com.acueducto.backend.dto.request.RegistrarPagoRequest;
 import com.acueducto.backend.dto.response.*;
 import com.acueducto.backend.entity.enums.TipoMovimiento;
@@ -56,10 +57,12 @@ public class TesoreriaController {
     }
 
     @Operation(summary = "Pagar una multa independiente (aparte)", description = "Solo aplica a multas con independiente=true. "
-            + "Las multas regulares se pagan junto con su factura.")
+            + "Las multas regulares se pagan junto con su factura. Genera movimiento de entrada en tesoreria.")
     @PatchMapping("/multas/{id}/pagar")
-    public ResponseEntity<MultaResponse> pagarMultaIndependiente(@PathVariable Long id) {
-        return ResponseEntity.ok(tesoreriaService.pagarMultaIndependiente(id));
+    public ResponseEntity<MultaResponse> pagarMultaIndependiente(
+            @PathVariable Long id,
+            @Valid @RequestBody PagarMultaRequest request) {
+        return ResponseEntity.ok(tesoreriaService.pagarMultaIndependiente(id, request));
     }
 
     @Operation(summary = "Editar el valor de una multa", description = "El motivo no se puede editar, solo el valor. "

@@ -210,7 +210,7 @@ public class GestionDatosImportantesService {
         for (Pago pago : pagoRepository.findByTesoreroId(usuario.getId())) {
             Factura factura = pago.getFactura();
             eliminarPagoCompleto(pago);
-            recalcularFactura(factura);
+            if (factura != null) recalcularFactura(factura);
         }
         // Movimientos de tesoreria que registro
         movimientoTesoreriaRepository.findByUsuarioId(usuario.getId()).forEach(movimientoTesoreriaRepository::delete);
@@ -332,8 +332,8 @@ public class GestionDatosImportantesService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado con id " + id));
         Factura factura = pago.getFactura();
         eliminarPagoCompleto(pago);
-        recalcularFactura(factura);
-        auditoriaService.registrar("ELIMINAR_PAGO_DEFINITIVO", "DATOS_IMPORTANTES", factura.getNumeroFactura(), "id=" + id);
+        if (factura != null) recalcularFactura(factura);
+        auditoriaService.registrar("ELIMINAR_PAGO_DEFINITIVO", "DATOS_IMPORTANTES", factura != null ? factura.getNumeroFactura() : "Multa independiente", "id=" + id);
     }
 
     private void eliminarPagoCompleto(Pago pago) {
@@ -376,7 +376,7 @@ public class GestionDatosImportantesService {
             Pago pago = movimiento.getRecibo().getPago();
             Factura factura = pago.getFactura();
             eliminarPagoCompleto(pago);
-            recalcularFactura(factura);
+            if (factura != null) recalcularFactura(factura);
         } else {
             movimientoTesoreriaRepository.delete(movimiento);
         }
@@ -585,7 +585,8 @@ public class GestionDatosImportantesService {
     private VerificacionBorradoResponse verificarPago(Long id) {
         Pago pago = pagoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado con id " + id));
-        VerificacionBorradoResponse r = VerificacionBorradoResponse.borrable("PAGO", id, pago.getFactura().getNumeroFactura(),
+        VerificacionBorradoResponse r = VerificacionBorradoResponse.borrable("PAGO", id,
+                pago.getFactura() != null ? pago.getFactura().getNumeroFactura() : "Multa independiente",
                 "Se borrara el pago con su recibo y movimientos, y se recalculara el estado de la factura.");
         r.getCascada().put("recibo", reciboRepository.findByPagoId(id).isPresent() ? 1L : 0L);
         r.getCascada().put("movimientosTesoreria", reciboRepository.findByPagoId(id)

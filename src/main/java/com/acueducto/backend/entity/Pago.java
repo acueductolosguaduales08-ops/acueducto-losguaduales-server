@@ -20,9 +20,13 @@ import java.time.LocalDateTime;
 @Builder
 public class Pago extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "factura_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "factura_id", nullable = true)
     private Factura factura;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "multa_id", nullable = true)
+    private Multa multa;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "asociado_id", nullable = false)

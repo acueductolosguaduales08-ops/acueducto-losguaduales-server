@@ -45,7 +45,9 @@ public class SecurityConfig {
 
     /** Rutas publicas sin restriccion de metodo HTTP (no exponen operaciones de escritura sensibles). */
     private static final String[] PUBLIC_ENDPOINTS_ANY_METHOD = {
-            "/api/v1/auth/**",
+            // Auth: solo login y refresh son publicos (logout, perfil, cambiar-password requieren token)
+            "/api/v1/auth/login",
+            "/api/v1/auth/refresh",
             "/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**",
             "/h2-console/**",
             "/storage/**",

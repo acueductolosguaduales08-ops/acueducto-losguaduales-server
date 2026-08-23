@@ -26,7 +26,7 @@ public class PagoResponse {
     public static PagoResponse fromEntity(Pago p, String numeroRecibo) {
         return PagoResponse.builder()
                 .id(p.getId())
-                .numeroFactura(p.getFactura().getNumeroFactura())
+                .numeroFactura(p.getFactura() != null ? p.getFactura().getNumeroFactura() : null)
                 .asociadoId(p.getAsociado().getId())
                 .valor(p.getValor())
                 .fecha(p.getFecha())

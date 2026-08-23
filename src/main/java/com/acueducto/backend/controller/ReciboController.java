@@ -47,6 +47,24 @@ public class ReciboController {
         return ResponseEntity.ok(tesoreriaService.listarTodosLosRecibos());
     }
 
+    @Operation(summary = "Buscar recibo por numero")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
+    @GetMapping("/buscar")
+    public ResponseEntity<ReciboResponse> buscarPorNumero(@RequestParam String numero) {
+        Recibo recibo = tesoreriaService.obtenerReciboPorNumero(numero);
+        return ResponseEntity.ok(ReciboResponse.fromEntity(recibo));
+    }
+
+    @Operation(summary = "Obtener recibo de una multa pagada")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO') or hasRole('ASOCIADO')")
+    @GetMapping("/multa/{multaId}")
+    public ResponseEntity<ReciboResponse> buscarPorMulta(@PathVariable Long multaId) {
+        Recibo recibo = tesoreriaService.obtenerReciboPorMulta(multaId);
+        return ResponseEntity.ok(ReciboResponse.fromEntity(recibo));
+    }
+
     @Operation(summary = "Ver recibo en HTML")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO') or hasRole('ASOCIADO')")

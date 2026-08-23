@@ -523,7 +523,7 @@
                     <td class="label">Fecha de emision</td>
                     <td class="valor" th:text="${recibo.fechaEmision}">2026-08-16</td>
                     <td class="label-2">Factura relacionada</td>
-                    <td class="valor-2" th:text="${factura.numeroFactura}">FAC-000001</td>
+                    <td class="valor-2" th:text="${factura != null ? factura.numeroFactura : 'Multa independiente'}">FAC-000001</td>
                 </tr>
                 <tr>
                     <td class="label">Asociado</td>

@@ -31,7 +31,7 @@ public class ReciboResponse {
         return ReciboResponse.builder()
                 .id(r.getId())
                 .numeroRecibo(r.getNumeroRecibo())
-                .numeroFactura(r.getFactura().getNumeroFactura())
+                .numeroFactura(r.getFactura() != null ? r.getFactura().getNumeroFactura() : null)
                 .asociadoId(r.getAsociado().getId())
                 .asociadoNombre(r.getAsociado().getNombres() + " " + r.getAsociado().getApellidos())
                 .fechaEmision(r.getFechaEmision())
