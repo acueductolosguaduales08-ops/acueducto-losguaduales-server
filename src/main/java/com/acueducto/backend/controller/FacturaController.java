@@ -126,6 +126,18 @@ public class FacturaController {
         return ResponseEntity.ok(FacturaResponse.fromEntity(factura));
     }
 
+    @Operation(summary = "Descargar factura en PDF via QR (publico)",
+            description = "Permite descargar el PDF de la factura sin iniciar sesion, ideal para escanear QR y descargar directamente.")
+    @GetMapping(value = "/qr/{numeroFactura}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> descargarPdfPorQr(@PathVariable String numeroFactura) {
+        Factura factura = facturaService.obtenerPorNumero(numeroFactura);
+        byte[] pdf = documentoService.generarFacturaPdf(factura);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + factura.getNumeroFactura() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @Operation(summary = "Generar enlace publico de descarga de la factura",
             description = "Exclusivo de Administrador y Tesorero. Crea un enlace temporal (72 horas) que permite descargar el PDF de la factura SIN iniciar sesion, ideal para enviarlo por WhatsApp. Generar un enlace nuevo elimina el anterior del mismo documento.")
     @SecurityRequirement(name = "bearerAuth")

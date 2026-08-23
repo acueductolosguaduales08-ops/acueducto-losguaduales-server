@@ -96,6 +96,18 @@ public class ReciboController {
         return ResponseEntity.ok(ReciboResponse.fromEntity(recibo));
     }
 
+    @Operation(summary = "Descargar recibo en PDF via QR (publico)",
+            description = "Permite descargar el PDF del recibo sin iniciar sesion, ideal para escanear QR y descargar directamente.")
+    @GetMapping(value = "/qr/{numeroRecibo}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> descargarPdfPorQr(@PathVariable String numeroRecibo) {
+        Recibo recibo = tesoreriaService.obtenerReciboPorNumero(numeroRecibo);
+        byte[] pdf = documentoService.generarReciboPdf(recibo);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + recibo.getNumeroRecibo() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @Operation(summary = "Generar enlace publico de descarga del recibo",
             description = "Exclusivo de Administrador y Tesorero. Crea un enlace temporal (72 horas) que permite descargar el PDF del recibo SIN iniciar sesion, ideal para enviarlo por WhatsApp. Generar un enlace nuevo elimina el anterior del mismo documento.")
     @SecurityRequirement(name = "bearerAuth")
