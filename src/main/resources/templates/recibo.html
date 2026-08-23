@@ -129,6 +129,10 @@
             font-weight: 700;
         }
 
+        .empresa h1.multa {
+            color: #d97706;
+        }
+
         .empresa p {
             margin: 0.8mm 0;
             font-size: 12px;
@@ -519,7 +523,7 @@
                         <img th:if="${logoSrc}" th:src="${logoSrc}" th:width="${logoAncho}" th:height="${logoAlto}" alt="Logo"/>
                     </td>
                     <td>
-                        <h1 th:text="${config.nombreAcueducto}">Acueducto Los Guaduales</h1>
+                        <h1 th:text="${config.nombreAcueducto}" th:classappend="${esMultaIndependiente} ? ' multa' : ''">Acueducto Los Guaduales</h1>
                         <p th:text="${config.direccion}">Direccion</p>
                         <p>
                             <span th:text="'Tel: ' + ${config.telefonoPrincipal}">Tel</span>
