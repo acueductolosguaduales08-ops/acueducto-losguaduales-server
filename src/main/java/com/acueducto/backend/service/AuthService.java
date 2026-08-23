@@ -54,9 +54,6 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password()));
-
         Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(request.username())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
@@ -66,6 +63,9 @@ public class AuthService {
                     + (motivo.isEmpty() ? "" : " Asunto: " + motivo);
             throw new ReglaNegocioException(mensaje);
         }
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.username(), request.password()));
 
         UserPrincipal principal = new UserPrincipal(usuario);
         Map<String, Object> claims = new HashMap<>();
