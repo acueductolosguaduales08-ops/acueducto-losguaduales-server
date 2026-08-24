@@ -37,6 +37,7 @@ public class PublicacionService {
     private final ReaccionPublicacionRepository reaccionPublicacionRepository;
     private final AuditoriaService auditoriaService;
     private final SupabaseStorageService supabaseStorageService;
+    private final NotificacionService notificacionService;
 
     @Transactional
     public PublicacionResponse crear(PublicacionRequest request, String autorUsername) {
@@ -78,6 +79,10 @@ public class PublicacionService {
         publicacion.setEstado(EstadoPublicacion.PUBLICADA);
         publicacion = publicacionRepository.save(publicacion);
         auditoriaService.registrar("PUBLICAR_CONTENIDO", "PORTAL_PUBLICO", publicacion.getTitulo(), null);
+
+        // Notificar a todos los usuarios sobre el nuevo contenido
+        notificacionService.notificarNuevaPublicacion(publicacion, "contenido");
+
         return PublicacionResponse.fromEntity(publicacion);
     }
 
@@ -205,7 +210,12 @@ public class PublicacionService {
         Video video = Video.builder()
                 .titulo(request.titulo()).descripcion(request.descripcion()).urlVideo(request.urlVideo()).visible(true)
                 .build();
-        return videoRepository.save(video);
+        video = videoRepository.save(video);
+
+        // Notificar a todos los usuarios sobre el nuevo video
+        notificacionService.notificarNuevoVideo(video);
+
+        return video;
     }
 
     public List<Video> listarVideosVisibles() {

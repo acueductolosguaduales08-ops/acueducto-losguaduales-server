@@ -62,4 +62,12 @@ public class NotificacionController {
         notificacionService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Crear aviso general del Tesorero para todos los usuarios", description = "Notificacion PUBLICA visible para todos los asociados.")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
+    @PostMapping("/aviso-tesorero")
+    public ResponseEntity<NotificacionResponse> avisoTesorero(@Valid @RequestBody NotificacionRequest request, Authentication authentication) {
+        return ResponseEntity.ok(notificacionService.notificarAvisoTesorero(request, authentication.getName()));
+    }
 }

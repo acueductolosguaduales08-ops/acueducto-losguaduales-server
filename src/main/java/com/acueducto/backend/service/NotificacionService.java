@@ -196,6 +196,88 @@ public class NotificacionService {
         }
     }
 
+    /**
+     * Notifica a todos los usuarios cuando se publica un nuevo contenido (galeria, publicacion, video).
+     * Crea una notificacion PUBLICA visible para todos.
+     */
+    public void notificarNuevaPublicacion(Publicacion publicacion, String tipoContenido) {
+        Usuario autorSistema = usuarioRepository.findAll().stream()
+                .filter(u -> u.getRol() == com.acueducto.backend.entity.enums.Rol.ADMINISTRADOR)
+                .findFirst().orElse(null);
+        if (autorSistema == null) return;
+
+        String titulo = "Nuevo " + tipoContenido + " publicado";
+        String descripcion = "Se publicó: " + publicacion.getTitulo();
+        String contenido = publicacion.getDescripcionCorta() != null ? publicacion.getDescripcionCorta() : publicacion.getTitulo();
+        String enlace = "/publicaciones/" + publicacion.getId();
+
+        Notificacion notificacion = Notificacion.builder()
+                .titulo(titulo)
+                .descripcionCorta(descripcion)
+                .contenidoCompleto(contenido)
+                .tipo(TipoNotificacion.PUBLICA)
+                .prioridad(PrioridadNotificacion.BAJA)
+                .estado(EstadoNotificacion.ACTIVA)
+                .autor(autorSistema)
+                .fechaPublicacion(LocalDateTime.now())
+                .enlaceUrl(enlace)
+                .build();
+        notificacionRepository.save(notificacion);
+    }
+
+    /**
+     * Notifica a todos los usuarios cuando se sube un video nuevo.
+     */
+    public void notificarNuevoVideo(Video video) {
+        Usuario autorSistema = usuarioRepository.findAll().stream()
+                .filter(u -> u.getRol() == com.acueducto.backend.entity.enums.Rol.ADMINISTRADOR)
+                .findFirst().orElse(null);
+        if (autorSistema == null) return;
+
+        String titulo = "Nuevo video publicado";
+        String descripcion = video.getTitulo() != null ? video.getTitulo() : "Video disponible";
+        String contenido = video.getDescripcion() != null ? video.getDescripcion() : descripcion;
+
+        Notificacion notificacion = Notificacion.builder()
+                .titulo(titulo)
+                .descripcionCorta(descripcion)
+                .contenidoCompleto(contenido)
+                .tipo(TipoNotificacion.PUBLICA)
+                .prioridad(PrioridadNotificacion.BAJA)
+                .estado(EstadoNotificacion.ACTIVA)
+                .autor(autorSistema)
+                .fechaPublicacion(LocalDateTime.now())
+                .enlaceUrl(video.getUrlVideo())
+                .build();
+        notificacionRepository.save(notificacion);
+    }
+
+    /**
+     * Aviso general del Tesorero para todos los usuarios (recibe pagos, no recibe pagos, instrucciones, etc.).
+     * Crea una notificacion PUBLICA con los campos personalizados del formulario.
+     */
+    public NotificacionResponse notificarAvisoTesorero(NotificacionRequest request, String autorUsername) {
+        Usuario autor = usuarioRepository.findByUsernameIgnoreCase(autorUsername)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        Notificacion notificacion = Notificacion.builder()
+                .titulo(request.titulo())
+                .descripcionCorta(request.descripcionCorta())
+                .contenidoCompleto(request.contenidoCompleto())
+                .tipo(TipoNotificacion.PUBLICA)
+                .prioridad(request.prioridad() != null ? request.prioridad() : PrioridadNotificacion.NORMAL)
+                .estado(EstadoNotificacion.ACTIVA)
+                .autor(autor)
+                .fechaPublicacion(LocalDateTime.now())
+                .fechaVencimiento(request.fechaVencimiento())
+                .enlaceUrl(request.enlaceUrl())
+                .build();
+
+        notificacion = notificacionRepository.save(notificacion);
+        auditoriaService.registrar("AVISO_TESORERO", "TESORERIA", notificacion.getTitulo(), null);
+        return NotificacionResponse.fromEntity(notificacion, false);
+    }
+
     @Transactional
     public void marcarLeida(Long notificacionId, Long usuarioId) {
         var existente = notificacionLecturaRepository.findByNotificacionIdAndUsuarioId(notificacionId, usuarioId);
