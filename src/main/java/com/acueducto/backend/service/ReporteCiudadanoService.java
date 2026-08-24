@@ -28,6 +28,7 @@ public class ReporteCiudadanoService {
 
     private final ReporteCiudadanoRepository reporteCiudadanoRepository;
     private final NotificacionService notificacionService;
+    private final SupabaseStorageService supabaseStorageService;
 
     @Transactional
     public ReporteCiudadanoResponse crear(ReporteCiudadanoRequest request) {
@@ -64,6 +65,12 @@ public class ReporteCiudadanoService {
     public int eliminarVencidos() {
         var vencidos = reporteCiudadanoRepository.findByFechaEliminacionBefore(LocalDateTime.now());
         if (vencidos.isEmpty()) return 0;
+
+        // Borrar imágenes de Supabase antes de borrar los registros
+        for (var reporte : vencidos) {
+            supabaseStorageService.eliminarPorUrl(reporte.getImagenUrl());
+        }
+
         reporteCiudadanoRepository.deleteAll(vencidos);
         return vencidos.size();
     }
@@ -78,6 +85,10 @@ public class ReporteCiudadanoService {
         ReporteCiudadano reporte = reporteCiudadanoRepository.findById(id)
                 .orElseThrow(() -> new com.acueducto.backend.exception.RecursoNoEncontradoException(
                         "Reporte ciudadano no encontrado con id " + id));
+
+        // Borrar imagen de Supabase antes del registro
+        supabaseStorageService.eliminarPorUrl(reporte.getImagenUrl());
+
         reporteCiudadanoRepository.delete(reporte);
     }
 }
