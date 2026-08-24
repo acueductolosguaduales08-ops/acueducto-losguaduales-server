@@ -36,6 +36,7 @@ public class PublicacionService {
     private final UsuarioRepository usuarioRepository;
     private final ReaccionPublicacionRepository reaccionPublicacionRepository;
     private final AuditoriaService auditoriaService;
+    private final SupabaseStorageService supabaseStorageService;
 
     @Transactional
     public PublicacionResponse crear(PublicacionRequest request, String autorUsername) {
@@ -129,6 +130,10 @@ public class PublicacionService {
     @Transactional
     public void eliminar(Long id) {
         Publicacion publicacion = obtenerEntidad(id);
+
+        // Borrar imagen de Supabase Storage si existe
+        supabaseStorageService.eliminarPorUrl(publicacion.getImagenUrl());
+
         reaccionPublicacionRepository.deleteAll(reaccionPublicacionRepository.findByPublicacionIdOrderByContadorDesc(id));
         publicacionRepository.delete(publicacion);
         auditoriaService.registrar("ELIMINAR_PUBLICACION", "PORTAL_PUBLICO", publicacion.getTitulo(), null);

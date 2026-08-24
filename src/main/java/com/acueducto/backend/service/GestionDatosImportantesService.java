@@ -57,6 +57,7 @@ public class GestionDatosImportantesService {
     private final ConversacionRepository conversacionRepository;
     private final MensajeRepository mensajeRepository;
     private final SolicitudEliminacionRepository solicitudEliminacionRepository;
+    private final SupabaseStorageService supabaseStorageService;
 
     // =============================== FORMULARIOS ===============================
 
@@ -202,6 +203,7 @@ public class GestionDatosImportantesService {
 
         // Publicaciones que creo (borra reacciones en cascada; etiquetasManyToMany se desvinculan solas)
         for (Publicacion pub : publicacionRepository.findByAutorId(uid)) {
+            supabaseStorageService.eliminarPorUrl(pub.getImagenUrl());
             reaccionPublicacionRepository.deleteAll(reaccionPublicacionRepository.findByPublicacionIdOrderByContadorDesc(pub.getId()));
             publicacionRepository.delete(pub);
         }
