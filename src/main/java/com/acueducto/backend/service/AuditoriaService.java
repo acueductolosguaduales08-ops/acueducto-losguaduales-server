@@ -82,6 +82,18 @@ public class AuditoriaService {
         return auditoriaActiva();
     }
 
+    /** Elimina registros de auditoria con mas de N dias (limpieza automatica). */
+    @Transactional
+    public int eliminarAntiguos(int dias) {
+        LocalDateTime fechaLimite = LocalDateTime.now().minusDays(dias);
+        int eliminados = auditoriaRepository.deleteByFechaBefore(fechaLimite);
+        if (eliminados > 0) {
+            registrar("LIMPIEZA_AUTOMATICA", "AUDITORIA", null,
+                    "Se eliminaron " + eliminados + " registros de auditoria con mas de " + dias + " dias.");
+        }
+        return eliminados;
+    }
+
     private String usuarioActual() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {

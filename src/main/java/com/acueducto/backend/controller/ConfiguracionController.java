@@ -13,9 +13,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -98,5 +100,15 @@ public class ConfiguracionController {
     @PatchMapping("/edicion-asociados")
     public ResponseEntity<ConfiguracionResponse> cambiarEdicionAsociados(@RequestParam boolean activa) {
         return ResponseEntity.ok(configuracionService.cambiarEdicionAsociados(activa));
+    }
+
+    @Operation(summary = "Subir archivo institucional a Supabase Storage", description = "Sube una imagen (logo, firma o sello) a Supabase Storage y la registra como archivo institucional. Bucket: 'institutional'. Maximo 2MB, solo imagenes.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PostMapping(value = "/archivos/{tipo}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ArchivoInstitucional> subirArchivo(
+            @PathVariable TipoArchivoInstitucional tipo,
+            @RequestParam("archivo") MultipartFile archivo,
+            @RequestParam(value = "nombreArchivo", required = false) String nombreArchivo) {
+        return ResponseEntity.ok(configuracionService.subirArchivoInstitucional(tipo, archivo, nombreArchivo));
     }
 }

@@ -9,6 +9,7 @@ import com.acueducto.backend.entity.MetodoPago;
 import com.acueducto.backend.entity.enums.FuenteArchivoInstitucional;
 import com.acueducto.backend.entity.enums.TipoArchivoInstitucional;
 import com.acueducto.backend.exception.RecursoNoEncontradoException;
+import com.acueducto.backend.exception.ReglaNegocioException;
 import com.acueducto.backend.repository.ArchivoInstitucionalRepository;
 import com.acueducto.backend.repository.ConfiguracionRepository;
 import com.acueducto.backend.repository.MetodoPagoRepository;
@@ -16,6 +17,8 @@ import com.acueducto.backend.util.UrlUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,6 +46,7 @@ public class ConfiguracionService {
     private final MetodoPagoRepository metodoPagoRepository;
     private final ArchivoInstitucionalRepository archivoInstitucionalRepository;
     private final AuditoriaService auditoriaService;
+    private final SupabaseStorageService supabaseStorageService;
 
     public ConfiguracionResponse obtener() {
         return ConfiguracionResponse.fromEntity(obtenerEntidad());
@@ -181,6 +185,51 @@ public class ConfiguracionService {
         entidad = archivoInstitucionalRepository.save(entidad);
 
         auditoriaService.registrar("REGISTRAR_ARCHIVO_INSTITUCIONAL_URL", "CONFIGURACION", nombreFinal, tipo.name());
+        return entidad;
+    }
+
+    /** Sube un archivo (logo/firma/sello) a Supabase Storage y lo registra en la BD. */
+    @Transactional
+    public ArchivoInstitucional subirArchivoInstitucional(TipoArchivoInstitucional tipo, MultipartFile archivo, String nombreArchivo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new ReglaNegocioException("El archivo no puede estar vacio");
+        }
+
+        String contentType = archivo.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new ReglaNegocioException("Solo se permiten archivos de imagen (jpg, png, svg, etc.)");
+        }
+
+        long maxSize = 2 * 1024 * 1024; // 2MB
+        if (archivo.getSize() > maxSize) {
+            throw new ReglaNegocioException("El archivo no puede superar 2MB");
+        }
+
+        String folder = switch (tipo) {
+            case LOGO -> "logos";
+            case FIRMA -> "firmas";
+            case SELLO -> "sellos";
+        };
+
+        String publicUrl = supabaseStorageService.subirArchivo("institutional", archivo, folder);
+        if (publicUrl == null) {
+            throw new ReglaNegocioException("No se pudo subir el archivo a Supabase Storage");
+        }
+
+        String nombreFinal = (nombreArchivo == null || nombreArchivo.isBlank())
+                ? archivo.getOriginalFilename() : nombreArchivo;
+        nombreFinal = sanitizarNombre(nombreFinal);
+
+        ArchivoInstitucional entidad = ArchivoInstitucional.builder()
+                .tipo(tipo)
+                .nombreArchivo(nombreFinal)
+                .ruta(publicUrl)
+                .fuente(FuenteArchivoInstitucional.STORAGE)
+                .activo(false)
+                .build();
+        entidad = archivoInstitucionalRepository.save(entidad);
+
+        auditoriaService.registrar("SUBIR_ARCHIVO_INSTITUCIONAL", "CONFIGURACION", nombreFinal, tipo.name());
         return entidad;
     }
 

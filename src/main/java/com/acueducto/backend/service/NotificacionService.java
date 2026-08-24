@@ -320,4 +320,19 @@ public class NotificacionService {
         notificacionRepository.delete(notificacion);
         auditoriaService.registrar("ELIMINAR_NOTIFICACION", "NOTIFICACIONES", notificacion.getTitulo(), null);
     }
+
+    /** Elimina notificaciones vencidas (fechaVencimiento < ahora) y sus registros de lectura asociados. */
+    @Transactional
+    public int eliminarVencidas() {
+        java.util.List<Notificacion> vencidas = notificacionRepository.findAll().stream()
+                .filter(n -> n.getFechaVencimiento() != null && n.getFechaVencimiento().isBefore(LocalDateTime.now()))
+                .toList();
+        int eliminadas = 0;
+        for (Notificacion n : vencidas) {
+            notificacionLecturaRepository.findByNotificacionId(n.getId()).forEach(notificacionLecturaRepository::delete);
+            notificacionRepository.delete(n);
+            eliminadas++;
+        }
+        return eliminadas;
+    }
 }
