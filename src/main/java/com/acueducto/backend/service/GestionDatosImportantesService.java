@@ -145,6 +145,12 @@ public class GestionDatosImportantesService {
 
         // Cuenta de usuario vinculada (si existe) -> cascada de sus dependencias
         usuarioRepository.findByAsociadoId(id).ifPresent(this::eliminarCuentaCascada);
+        // Pagos de multas independientes (borrar antes que las multas para no romper FK)
+        for (Multa multa : multaRepository.findByAsociadoId(id)) {
+            for (Pago pagoMulta : pagoRepository.findByMultaId(multa.getId())) {
+                eliminarPagoCompleto(pagoMulta);
+            }
+        }
         // Multas
         multaRepository.findByAsociadoId(id).forEach(multaRepository::delete);
         // Facturas (cascada total)

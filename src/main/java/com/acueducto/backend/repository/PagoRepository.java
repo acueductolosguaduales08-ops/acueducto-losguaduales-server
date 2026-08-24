@@ -12,4 +12,5 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     List<Pago> findByFechaBetween(LocalDateTime desde, LocalDateTime hasta);
     boolean existsByTesoreroId(Long tesoreroId);
     List<Pago> findByTesoreroId(Long tesoreroId);
+    List<Pago> findByMultaId(Long multaId);
 }

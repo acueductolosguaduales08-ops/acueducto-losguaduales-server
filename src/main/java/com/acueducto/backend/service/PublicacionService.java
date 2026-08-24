@@ -129,6 +129,7 @@ public class PublicacionService {
     @Transactional
     public void eliminar(Long id) {
         Publicacion publicacion = obtenerEntidad(id);
+        reaccionPublicacionRepository.deleteAll(reaccionPublicacionRepository.findByPublicacionIdOrderByContadorDesc(id));
         publicacionRepository.delete(publicacion);
         auditoriaService.registrar("ELIMINAR_PUBLICACION", "PORTAL_PUBLICO", publicacion.getTitulo(), null);
     }

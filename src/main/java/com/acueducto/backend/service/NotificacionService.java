@@ -234,6 +234,7 @@ public class NotificacionService {
     public void eliminar(Long id) {
         Notificacion notificacion = notificacionRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Notificacion no encontrada"));
+        notificacionLecturaRepository.findByNotificacionId(id).forEach(notificacionLecturaRepository::delete);
         notificacionRepository.delete(notificacion);
         auditoriaService.registrar("ELIMINAR_NOTIFICACION", "NOTIFICACIONES", notificacion.getTitulo(), null);
     }
