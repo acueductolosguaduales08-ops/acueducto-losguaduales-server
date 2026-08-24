@@ -313,6 +313,9 @@ public class GestionDatosImportantesService {
             facturaRepository.save(factura);
         }
         String motivo = multa.getMotivo();
+        for (Pago pagoMulta : pagoRepository.findByMultaId(id)) {
+            eliminarPagoCompleto(pagoMulta);
+        }
         multaRepository.delete(multa);
         auditoriaService.registrar("ELIMINAR_MULTA_DEFINITIVA", "DATOS_IMPORTANTES", motivo, "id=" + id);
     }
