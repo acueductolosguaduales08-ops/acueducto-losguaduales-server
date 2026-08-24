@@ -52,6 +52,11 @@ public class GestionDatosImportantesService {
     private final MovimientoTesoreriaRepository movimientoTesoreriaRepository;
     private final NotificacionRepository notificacionRepository;
     private final NotificacionLecturaRepository notificacionLecturaRepository;
+    private final PublicacionRepository publicacionRepository;
+    private final ReaccionPublicacionRepository reaccionPublicacionRepository;
+    private final ConversacionRepository conversacionRepository;
+    private final MensajeRepository mensajeRepository;
+    private final SolicitudEliminacionRepository solicitudEliminacionRepository;
 
     // =============================== FORMULARIOS ===============================
 
@@ -187,11 +192,20 @@ public class GestionDatosImportantesService {
     }
 
     private void eliminarCuentaCascada(Usuario usuario) {
+        Long uid = usuario.getId();
+
+        // Publicaciones que creo (borra reacciones en cascada; etiquetasManyToMany se desvinculan solas)
+        for (Publicacion pub : publicacionRepository.findByAutorId(uid)) {
+            reaccionPublicacionRepository.deleteAll(reaccionPublicacionRepository.findByPublicacionIdOrderByContadorDesc(pub.getId()));
+            publicacionRepository.delete(pub);
+        }
+
         // Formularios que creo
-        encuestaRepository.findByAutorId(usuario.getId()).forEach(this::eliminarEncuestaCascada);
+        encuestaRepository.findByAutorId(uid).forEach(this::eliminarEncuestaCascada);
+
         // Notificaciones que autorizo o que le fueron dirigidas (sin duplicar)
-        List<Notificacion> notificaciones = new java.util.ArrayList<>(notificacionRepository.findByAutorId(usuario.getId()));
-        for (Notificacion n : notificacionRepository.findByDestinatarioId(usuario.getId())) {
+        List<Notificacion> notificaciones = new java.util.ArrayList<>(notificacionRepository.findByAutorId(uid));
+        for (Notificacion n : notificacionRepository.findByDestinatarioId(uid)) {
             if (notificaciones.stream().noneMatch(x -> x.getId().equals(n.getId()))) {
                 notificaciones.add(n);
             }
@@ -199,21 +213,38 @@ public class GestionDatosImportantesService {
         for (Notificacion n : notificaciones) {
             eliminarNotificacionCascada(n);
         }
+
         // Registros de lectura de notificaciones
-        notificacionLecturaRepository.findByUsuarioId(usuario.getId()).forEach(notificacionLecturaRepository::delete);
+        notificacionLecturaRepository.findByUsuarioId(uid).forEach(notificacionLecturaRepository::delete);
+
         // Respuestas de formularios: se desvinculan del usuario (quedan como publicas/anonimas)
-        respuestaEncuestaRepository.findByUsuarioId(usuario.getId()).forEach(r -> {
+        respuestaEncuestaRepository.findByUsuarioId(uid).forEach(r -> {
             r.setUsuario(null);
             respuestaEncuestaRepository.save(r);
         });
+
         // Pagos que registro como tesorero (cascada recibo + movimiento + recalculando la factura)
-        for (Pago pago : pagoRepository.findByTesoreroId(usuario.getId())) {
+        for (Pago pago : pagoRepository.findByTesoreroId(uid)) {
             Factura factura = pago.getFactura();
             eliminarPagoCompleto(pago);
             if (factura != null) recalcularFactura(factura);
         }
+
         // Movimientos de tesoreria que registro
-        movimientoTesoreriaRepository.findByUsuarioId(usuario.getId()).forEach(movimientoTesoreriaRepository::delete);
+        movimientoTesoreriaRepository.findByUsuarioId(uid).forEach(movimientoTesoreriaRepository::delete);
+
+        // Conversaciones de chat donde participa (borra solicitudes, mensajes y la conversacion)
+        List<Conversacion> conversaciones = conversacionRepository.findByUsuario1IdOrUsuario2Id(uid, uid);
+        for (Conversacion conv : conversaciones) {
+            solicitudEliminacionRepository.deleteByMensaje_ConversacionId(conv.getId());
+            mensajeRepository.deleteByConversacionId(conv.getId());
+            conversacionRepository.delete(conv);
+        }
+
+        // Solicitudes de eliminacion donde fue solicitante o confirmador
+        // (las de conversaciones ya se limpiaron arriba; esto cubre las restantes)
+        solicitudEliminacionRepository.deleteByUsuarioId(uid);
+
         usuarioRepository.delete(usuario);
     }
 
@@ -509,7 +540,8 @@ public class GestionDatosImportantesService {
                     List.of("Es la cuenta de la sesion actual; no se puede eliminar mientras se esta usando."));
         }
         VerificacionBorradoResponse r = VerificacionBorradoResponse.borrable("CUENTA", id, u.getUsername(),
-                "Se borrara la cuenta y, en cascada, todo lo que le pertenece (formularios, notificaciones, pagos registrados, movimientos).");
+                "Se borrara la cuenta y, en cascada, todo lo que le pertenece (publicaciones, formularios, notificaciones, conversaciones, pagos registrados, movimientos).");
+        r.getCascada().put("publicaciones", (long) publicacionRepository.findByAutorId(id).size());
         r.getCascada().put("formularios", (long) encuestaRepository.findByAutorId(id).size());
         r.getCascada().put("notificaciones", (long) (notificacionRepository.findByAutorId(id).size()
                 + notificacionRepository.findByDestinatarioId(id).size()));
@@ -517,6 +549,8 @@ public class GestionDatosImportantesService {
         r.getCascada().put("respuestasDesvinculadas", (long) respuestaEncuestaRepository.findByUsuarioId(id).size());
         r.getCascada().put("pagosRegistrados", (long) pagoRepository.findByTesoreroId(id).size());
         r.getCascada().put("movimientosTesoreria", (long) movimientoTesoreriaRepository.findByUsuarioId(id).size());
+        long conversaciones = conversacionRepository.findByUsuario1IdOrUsuario2Id(id, id).size();
+        r.getCascada().put("conversacionesChat", conversaciones);
         return r;
     }
 

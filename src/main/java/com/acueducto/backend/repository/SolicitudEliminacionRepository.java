@@ -38,4 +38,9 @@ public interface SolicitudEliminacionRepository extends JpaRepository<SolicitudE
     @Modifying
     @Query("delete from SolicitudEliminacion s where s.mensaje.conversacion.id = :conversacionId")
     int deleteByMensaje_ConversacionId(@Param("conversacionId") Long conversacionId);
+
+    /** Elimina todas las solicitudes donde el usuario es solicitante o confirmador. */
+    @Modifying
+    @Query("delete from SolicitudEliminacion s where s.solicitante.id = :usuarioId or s.confirmador.id = :usuarioId")
+    int deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
 }
