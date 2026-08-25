@@ -6,7 +6,7 @@
     <style>
         * { box-sizing: border-box; }
 
-        @page { size: A4; margin: 0; }
+        @page { size: A4; margin: 10mm; }
 
         body {
             margin: 0;
@@ -22,9 +22,9 @@
 
         .recibo {
             position: relative;
-            width: 210mm;
-            min-height: 297mm;
-            margin: 20px auto;
+            width: 190mm;
+            min-height: 277mm;
+            margin: 0 auto;
             background: #ffffff;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
         }
@@ -37,9 +37,10 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 210mm;
-            height: 82mm;
+            width: 190mm;
+            height: 60mm;
             z-index: 0;
+            opacity: 0.15;
         }
 
         .onda-superior.multa {
@@ -48,8 +49,8 @@
 
         .onda-superior img {
             display: block;
-            width: 210mm;
-            height: 82mm;
+            width: 190mm;
+            height: 60mm;
         }
 
         /* ================================
@@ -60,9 +61,10 @@
             position: absolute;
             bottom: 0;
             left: 0;
-            width: 210mm;
-            height: 65mm;
+            width: 190mm;
+            height: 50mm;
             z-index: 0;
+            opacity: 0.15;
         }
 
         .onda-inferior.multa {
@@ -71,8 +73,8 @@
 
         .onda-inferior img {
             display: block;
-            width: 210mm;
-            height: 65mm;
+            width: 190mm;
+            height: 50mm;
         }
 
         /* ================================
@@ -84,8 +86,8 @@
             z-index: 2;
             width: 166mm;
             margin: 0 auto;
-            padding-top: 18mm;
-            padding-bottom: 46mm;
+            padding-top: 12mm;
+            padding-bottom: 35mm;
         }
 
         /* ================================

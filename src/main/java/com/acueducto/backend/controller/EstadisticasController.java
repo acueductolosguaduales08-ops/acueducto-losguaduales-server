@@ -28,4 +28,11 @@ public class EstadisticasController {
     public ResponseEntity<Map<String, Object>> dashboard() {
         return ResponseEntity.ok(estadisticasService.dashboardGeneral());
     }
+
+    @Operation(summary = "Tendencia de recaudo mensual (ultimos meses)")
+    @GetMapping("/tendencia-recaudo")
+    public ResponseEntity<java.util.List<Map<String, Object>>> tendenciaRecaudo(
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "12") int meses) {
+        return ResponseEntity.ok(estadisticasService.tendenciaRecaudo(meses));
+    }
 }

@@ -9,8 +9,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,5 +65,40 @@ public class EstadisticasService {
                 com.acueducto.backend.entity.enums.EstadoEncuesta.ACTIVA).size());
 
         return resultado;
+    }
+
+    /**
+     * Retorna la tendencia de recaudo de los ultimos N meses.
+     * Cada elemento contiene: mes (string), ingresos, egresos, balance.
+     */
+    public List<Map<String, Object>> tendenciaRecaudo(int meses) {
+        List<Map<String, Object>> tendencia = new ArrayList<>();
+        LocalDate ahora = LocalDate.now();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MMM yyyy");
+
+        for (int i = meses - 1; i >= 0; i--) {
+            LocalDate mesInicio = ahora.minusMonths(i).withDayOfMonth(1);
+            LocalDate mesFin = mesInicio.plusMonths(1).minusDays(1);
+            LocalDateTime inicio = mesInicio.atStartOfDay();
+            LocalDateTime fin = mesFin.atTime(23, 59, 59);
+
+            var movimientos = movimientoTesoreriaRepository.findByFechaBetweenAndAnuladoFalse(inicio, fin);
+            BigDecimal ingresos = movimientos.stream()
+                    .filter(m -> m.getTipo() == TipoMovimiento.ENTRADA)
+                    .map(com.acueducto.backend.entity.MovimientoTesoreria::getValor)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal egresos = movimientos.stream()
+                    .filter(m -> m.getTipo() == TipoMovimiento.SALIDA)
+                    .map(com.acueducto.backend.entity.MovimientoTesoreria::getValor)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            Map<String, Object> punto = new LinkedHashMap<>();
+            punto.put("mes", mesInicio.format(fmt));
+            punto.put("ingresos", ingresos);
+            punto.put("egresos", egresos);
+            punto.put("balance", ingresos.subtract(egresos));
+            tendencia.add(punto);
+        }
+        return tendencia;
     }
 }

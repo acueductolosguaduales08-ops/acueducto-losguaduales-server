@@ -78,6 +78,10 @@ public class Configuracion extends BaseEntity {
     private Integer diasPlazoPago = 15;
 
     @Builder.Default
+    @Column(name = "dias_para_suspension")
+    private Integer diasParaSuspension = 30;
+
+    @Builder.Default
     @Column(name = "siguiente_numero_factura", nullable = false)
     private Long siguienteNumeroFactura = 1L;
 

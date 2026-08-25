@@ -5,6 +5,7 @@ import com.acueducto.backend.dto.response.FacturaResponse;
 import com.acueducto.backend.entity.*;
 import com.acueducto.backend.entity.enums.EstadoFactura;
 import com.acueducto.backend.entity.enums.EstadoMes;
+import com.acueducto.backend.entity.enums.EstadoServicio;
 import com.acueducto.backend.exception.RecursoNoEncontradoException;
 import com.acueducto.backend.exception.ReglaNegocioException;
 import com.acueducto.backend.repository.*;
@@ -59,14 +60,24 @@ public class FacturaService {
             throw new ReglaNegocioException("No hay lecturas pendientes de facturar en este periodo.");
         }
 
+        // Excluir asociados con servicio suspendido o inactivo (9.x).
+        List<Lectura> lecturasFiltradas = lecturasPendientes.stream()
+                .filter(l -> l.getAsociado() != null
+                        && l.getAsociado().getEstadoServicio() == EstadoServicio.ACTIVO)
+                .toList();
+
+        if (lecturasFiltradas.isEmpty()) {
+            throw new ReglaNegocioException("No hay lecturas pendientes de asociados activos para facturar en este periodo.");
+        }
+
         List<FacturaResponse> generadas = new ArrayList<>();
-        for (Lectura lectura : lecturasPendientes) {
+        for (Lectura lectura : lecturasFiltradas) {
             generadas.add(generarFacturaDesdeLectura(lectura, mes));
         }
 
         auditoriaService.registrar("GENERAR_FACTURACION_MES", "FACTURACION",
                 mes.getNombreMes() + " " + mes.getAnioContable().getAnio(),
-                generadas.size() + " factura(s) generadas");
+                generadas.size() + " factura(s) generadas (excluidos " + (lecturasPendientes.size() - lecturasFiltradas.size()) + " asociados inactivos/suspendidos)");
 
         return generadas;
     }

@@ -335,4 +335,86 @@ public class NotificacionService {
         }
         return eliminadas;
     }
+
+    /**
+     * Notifica al asociado que su factura esta proxima a vencer (recordatorio de pago).
+     * Tambien notifica a ADMIN/TESORERO como recordatorio general.
+     */
+    public void notificarRecordatorioPago(Factura factura) {
+        Usuario destinatarioAsociado = usuarioRepository.findByAsociadoId(factura.getAsociado().getId()).orElse(null);
+        String titulo = "Recordatorio: factura proxima a vencer";
+        String desc = "La factura " + factura.getNumeroFactura() + " vence el " + factura.getFechaLimitePago();
+        String contenido = "Su factura " + factura.getNumeroFactura() + " por valor de $" + factura.getTotal()
+                + " vence el " + factura.getFechaLimitePago() + ". Realice su pago a tiempo para evitar suspension del servicio.";
+
+        crearNotificacionAutomatica(titulo, desc, contenido, destinatarioAsociado,
+                "/mis-facturas?ver=" + factura.getId());
+
+        // Notificar a ADMIN/TESORERO
+        notificarAvisoTesorero(new com.acueducto.backend.dto.request.NotificacionRequest(
+                titulo, desc, contenido,
+                com.acueducto.backend.entity.enums.TipoNotificacion.PUBLICA,
+                PrioridadNotificacion.BAJA, null, null, null, null),
+                "sistema");
+    }
+
+    /**
+     * Notifica al asociado y a ADMIN/TESORERO que su servicio sera suspendido
+     * por falta de pago.
+     */
+    public void notificarCorteProgramado(com.acueducto.backend.entity.Asociado asociado, int diasRestantes) {
+        Usuario destinatarioAsociado = usuarioRepository.findByAsociadoId(asociado.getId()).orElse(null);
+        String titulo = "AVISO: Suspension de servicio programada";
+        String desc = "Su servicio sera suspendido en " + diasRestantes + " dia(s) por falta de pago.";
+        String contenido = "Estimado " + asociado.getNombres() + " " + asociado.getApellidos()
+                + ": Su servicio de agua sera suspendido en " + diasRestantes
+                + " dia(s) debido a facturas pendientes de pago. "
+                + "Regularice su situacion para evitar el corte del servicio.";
+
+        crearNotificacionAutomatica(titulo, desc, contenido, destinatarioAsociado, "/mis-facturas");
+
+        // Notificar a ADMIN/TESORERO
+        notificarAvisoTesorero(new com.acueducto.backend.dto.request.NotificacionRequest(
+                "Alerta de corte: " + asociado.getNombres() + " " + asociado.getApellidos(),
+                desc, contenido,
+                com.acueducto.backend.entity.enums.TipoNotificacion.PUBLICA,
+                PrioridadNotificacion.ALTA, null, null, null, null),
+                "sistema");
+    }
+
+    /**
+     * Notifica al asociado y a ADMIN/TESORERO que su servicio ha sido suspendido.
+     */
+    public void notificarServicioSuspendido(com.acueducto.backend.entity.Asociado asociado) {
+        Usuario destinatarioAsociado = usuarioRepository.findByAsociadoId(asociado.getId()).orElse(null);
+        String titulo = "Servicio suspendido";
+        String desc = "Su servicio de agua ha sido suspendido por falta de pago.";
+        String contenido = "Estimado " + asociado.getNombres() + " " + asociado.getApellidos()
+                + ": Su servicio de agua ha sido suspendido. "
+                + "Para reactivarlo, realice el pago de sus facturas pendientes.";
+
+        crearNotificacionAutomatica(titulo, desc, contenido, destinatarioAsociado, "/mis-facturas");
+    }
+
+    /**
+     * Notifica consumo anormal a ADMIN/TESORERO y al asociado.
+     */
+    public void notificarConsumoAnormal(com.acueducto.backend.entity.Asociado asociado, int consumoM3, int umbral) {
+        Usuario destinatarioAsociado = usuarioRepository.findByAsociadoId(asociado.getId()).orElse(null);
+        String titulo = "Alerta de consumo anormal";
+        String desc = "Consumo de " + consumoM3 + " m3 detectado (umbral: " + umbral + " m3)";
+        String contenido = "Se detecto un consumo de " + consumoM3 + " m3 para el asociado "
+                + asociado.getNombres() + " " + asociado.getApellidos()
+                + ", superando el umbral configurado de " + umbral + " m3. Verifique el medidor.";
+
+        // Notificar al asociado
+        crearNotificacionAutomatica(titulo, desc, contenido, destinatarioAsociado, null);
+
+        // Notificar a ADMIN/TESORERO
+        notificarAvisoTesorero(new com.acueducto.backend.dto.request.NotificacionRequest(
+                titulo, desc, contenido,
+                com.acueducto.backend.entity.enums.TipoNotificacion.PUBLICA,
+                PrioridadNotificacion.NORMAL, null, null, null, null),
+                "sistema");
+    }
 }

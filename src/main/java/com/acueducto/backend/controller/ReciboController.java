@@ -60,8 +60,9 @@ public class ReciboController {
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO') or hasRole('ASOCIADO')")
     @GetMapping("/multa/{multaId}")
-    public ResponseEntity<ReciboResponse> buscarPorMulta(@PathVariable Long multaId) {
+    public ResponseEntity<ReciboResponse> buscarPorMulta(@PathVariable Long multaId, @AuthenticationPrincipal UserPrincipal principal) {
         Recibo recibo = tesoreriaService.obtenerReciboPorMulta(multaId);
+        verificarAcceso(recibo, principal);
         return ResponseEntity.ok(ReciboResponse.fromEntity(recibo));
     }
 

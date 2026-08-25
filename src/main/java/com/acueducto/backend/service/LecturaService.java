@@ -6,6 +6,7 @@ import com.acueducto.backend.dto.response.LecturaResponse;
 import com.acueducto.backend.entity.Lectura;
 import com.acueducto.backend.entity.MesContable;
 import com.acueducto.backend.entity.Medidor;
+import com.acueducto.backend.entity.enums.EstadoMedidor;
 import com.acueducto.backend.entity.enums.EstadoMes;
 import com.acueducto.backend.exception.RecursoDuplicadoException;
 import com.acueducto.backend.exception.RecursoNoEncontradoException;
@@ -42,6 +43,12 @@ public class LecturaService {
             throw new ReglaNegocioException("El medidor no tiene un asociado asignado.");
         }
 
+        if (medidor.getEstado() != EstadoMedidor.ACTIVO) {
+            throw new ReglaNegocioException(
+                    "No se puede registrar lectura en un medidor con estado " + medidor.getEstado()
+                    + ". Solo se permiten lecturas en medidores ACTIVOS.");
+        }
+
         MesContable mes = mesContableRepository.findById(request.mesContableId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mes contable no encontrado"));
 
@@ -66,6 +73,14 @@ public class LecturaService {
         if (request.lecturaActual() < lecturaAnterior) {
             throw new ReglaNegocioException(
                     "La lectura actual (" + request.lecturaActual() + ") no puede ser menor que la lectura anterior (" + lecturaAnterior + ").");
+        }
+
+        int consumo = request.lecturaActual() - lecturaAnterior;
+        if (consumo > 500) {
+            // Advertencia de consumo alto (no bloquea, solo registra en auditoria)
+            auditoriaService.registrar("ADVERTENCIA_CONSUMO_ALTO", "MEDIDORES", medidor.getNumero(),
+                    "Consumo inusualmente alto: " + consumo + " m3 (lectura actual: " + request.lecturaActual()
+                    + ", anterior: " + lecturaAnterior + ")");
         }
 
         Lectura lectura = Lectura.builder()

@@ -380,6 +380,8 @@ public class TesoreriaService {
                     factura.setEstado(EstadoFactura.PAGADA);
                 } else if (factura.getTotalPagado().compareTo(BigDecimal.ZERO) > 0) {
                     factura.setEstado(EstadoFactura.PAGADA_PARCIAL);
+                } else if (factura.getFechaLimitePago().isBefore(LocalDate.now())) {
+                    factura.setEstado(EstadoFactura.VENCIDA);
                 } else {
                     factura.setEstado(EstadoFactura.PENDIENTE);
                 }
