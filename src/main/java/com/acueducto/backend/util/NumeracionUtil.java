@@ -29,4 +29,8 @@ public final class NumeracionUtil {
     public static String formatearCodigoAsociado(long numero) {
         return "ASO-" + String.format("%05d", numero);
     }
+
+    public static String formatearNotaCredito(long numero) {
+        return "NC-" + String.format("%06d", numero);
+    }
 }

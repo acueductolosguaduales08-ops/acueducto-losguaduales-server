@@ -97,6 +97,10 @@ public class Configuracion extends BaseEntity {
     @Column(name = "siguiente_numero_salida", nullable = false)
     private Long siguienteNumeroSalida = 1L;
 
+    @Builder.Default
+    @Column(name = "siguiente_numero_nota_credito", nullable = false)
+    private Long siguienteNumeroNotaCredito = 1L;
+
     @Column(name = "notas_factura", columnDefinition = "TEXT")
     private String notasFactura;
 

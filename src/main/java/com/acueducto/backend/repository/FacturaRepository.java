@@ -13,6 +13,7 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     Optional<Factura> findByNumeroFactura(String numeroFactura);
     boolean existsByAsociadoIdAndMesContableId(Long asociadoId, Long mesContableId);
     Page<Factura> findByAsociadoId(Long asociadoId, Pageable pageable);
+    List<Factura> findByEstado(EstadoFactura estado);
     Page<Factura> findByEstado(EstadoFactura estado, Pageable pageable);
     List<Factura> findByMesContableId(Long mesContableId);
     List<Factura> findByEstadoAndFechaLimitePagoBefore(EstadoFactura estado, java.time.LocalDate fecha);

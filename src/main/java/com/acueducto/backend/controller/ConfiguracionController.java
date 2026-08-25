@@ -4,6 +4,7 @@ import com.acueducto.backend.dto.request.ArchivoInstitucionalUrlRequest;
 import com.acueducto.backend.dto.request.ConfiguracionRequest;
 import com.acueducto.backend.dto.request.MetodoPagoRequest;
 import com.acueducto.backend.dto.response.ConfiguracionResponse;
+import com.acueducto.backend.dto.response.TarifaHistorialResponse;
 import com.acueducto.backend.entity.ArchivoInstitucional;
 import com.acueducto.backend.entity.MetodoPago;
 import com.acueducto.backend.entity.enums.TipoArchivoInstitucional;
@@ -110,5 +111,16 @@ public class ConfiguracionController {
             @RequestParam("archivo") MultipartFile archivo,
             @RequestParam(value = "nombreArchivo", required = false) String nombreArchivo) {
         return ResponseEntity.ok(configuracionService.subirArchivoInstitucional(tipo, archivo, nombreArchivo));
+    }
+
+    @Operation(summary = "Historial de tarifas", description = "Lista las tarifas anteriores registradas (historial de cambios).")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
+    @GetMapping("/tarifas-historial")
+    public ResponseEntity<List<TarifaHistorialResponse>> listarHistorialTarifas() {
+        return ResponseEntity.ok(
+            configuracionService.listarHistorialTarifas().stream()
+                .map(TarifaHistorialResponse::fromEntity)
+                .toList()
+        );
     }
 }

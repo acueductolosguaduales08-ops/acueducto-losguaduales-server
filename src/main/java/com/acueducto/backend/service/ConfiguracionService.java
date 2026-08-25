@@ -6,6 +6,7 @@ import com.acueducto.backend.dto.response.ConfiguracionResponse;
 import com.acueducto.backend.entity.ArchivoInstitucional;
 import com.acueducto.backend.entity.Configuracion;
 import com.acueducto.backend.entity.MetodoPago;
+import com.acueducto.backend.entity.TarifaHistorial;
 import com.acueducto.backend.entity.enums.FuenteArchivoInstitucional;
 import com.acueducto.backend.entity.enums.TipoArchivoInstitucional;
 import com.acueducto.backend.exception.RecursoNoEncontradoException;
@@ -13,6 +14,7 @@ import com.acueducto.backend.exception.ReglaNegocioException;
 import com.acueducto.backend.repository.ArchivoInstitucionalRepository;
 import com.acueducto.backend.repository.ConfiguracionRepository;
 import com.acueducto.backend.repository.MetodoPagoRepository;
+import com.acueducto.backend.repository.TarifaHistorialRepository;
 import com.acueducto.backend.util.UrlUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,8 @@ import java.net.URL;
 import java.net.URLDecoder;
 import javax.imageio.ImageIO;
 import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +49,7 @@ public class ConfiguracionService {
     private final ConfiguracionRepository configuracionRepository;
     private final MetodoPagoRepository metodoPagoRepository;
     private final ArchivoInstitucionalRepository archivoInstitucionalRepository;
+    private final TarifaHistorialRepository tarifaHistorialRepository;
     private final AuditoriaService auditoriaService;
     private final SupabaseStorageService supabaseStorageService;
 
@@ -77,10 +82,31 @@ public class ConfiguracionService {
         config.setCargoFijoAdministracion(request.cargoFijoAdministracion());
         config.setValorReconexion(request.valorReconexion());
         config.setValorMultaDefecto(request.valorMultaDefecto());
+
+        boolean tarifasCambiaron = config.getValorM3().compareTo(request.valorM3()) != 0
+                || config.getCargoFijoAdministracion().compareTo(request.cargoFijoAdministracion()) != 0;
+
+        config.setValorM3(request.valorM3());
+        config.setCargoFijoAdministracion(request.cargoFijoAdministracion());
+        config.setValorReconexion(request.valorReconexion());
+        config.setValorMultaDefecto(request.valorMultaDefecto());
         if (request.diasPlazoPago() != null) config.setDiasPlazoPago(request.diasPlazoPago());
         config.setNotasFactura(request.notasFactura());
 
         config = configuracionRepository.save(config);
+
+        if (tarifasCambiaron) {
+            TarifaHistorial historial = TarifaHistorial.builder()
+                    .valorM3(request.valorM3())
+                    .cargoFijoAdministracion(request.cargoFijoAdministracion())
+                    .valorReconexion(request.valorReconexion())
+                    .valorMultaDefecto(request.valorMultaDefecto())
+                    .fechaVigencia(LocalDate.now())
+                    .observaciones("Cambio de tarifas desde configuracion general")
+                    .build();
+            tarifaHistorialRepository.save(historial);
+        }
+
         auditoriaService.registrar("ACTUALIZAR_CONFIGURACION", "CONFIGURACION", "parametros_generales", null);
         return ConfiguracionResponse.fromEntity(config);
     }
@@ -136,6 +162,12 @@ public class ConfiguracionService {
 
     public List<MetodoPago> listarTodosMetodosPago() {
         return metodoPagoRepository.findAll();
+    }
+
+    // ---- Historial de tarifas ----
+
+    public List<TarifaHistorial> listarHistorialTarifas() {
+        return tarifaHistorialRepository.findAllByOrderByFechaVigenciaDesc();
     }
 
     // ---- Archivos institucionales (logo, firma, sello) ----
