@@ -40,6 +40,8 @@ public class ConfiguracionSchemaMigrator implements ApplicationRunner {
             new ColumnaReparar("configuracion", "hero_rotacion_desde", "TIMESTAMP", null),
             new ColumnaReparar("configuracion", "auditoria_activa", "BOOLEAN", "TRUE"),
             new ColumnaReparar("configuracion", "edicion_asociados_activa", "BOOLEAN", "TRUE"),
+            new ColumnaReparar("configuracion", "dias_para_suspension", "INTEGER", "30"),
+            new ColumnaReparar("configuracion", "siguiente_numero_nota_credito", "BIGINT", "1"),
             new ColumnaReparar("multas", "independiente", "BOOLEAN", "FALSE")
     );
 

@@ -47,9 +47,15 @@ public class AuditoriaService {
     }
 
     private boolean auditoriaActiva() {
-        return configuracionRepository.findAll().stream().findFirst()
-                .map(Configuracion::isAuditoriaActiva)
-                .orElse(true);
+        try {
+            return configuracionRepository.findAll().stream().findFirst()
+                    .map(Configuracion::isAuditoriaActiva)
+                    .orElse(true);
+        } catch (Exception e) {
+            // Si la tabla configuracion tiene problemas de esquema, permitir auditoria
+            // para no bloquear login/logout
+            return true;
+        }
     }
 
     /** Desactiva el registro de auditoria. La desactivacion misma siempre queda registrada (4.4). */

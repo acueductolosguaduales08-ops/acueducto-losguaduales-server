@@ -63,6 +63,8 @@ public class DatosInicialesLoader implements CommandLineRunner {
                 .siguienteNumeroRecibo(1L)
                 .siguienteNumeroEntrada(1L)
                 .siguienteNumeroSalida(1L)
+                .siguienteNumeroNotaCredito(1L)
+                .diasParaSuspension(30)
                 .notasFactura("Gracias por su pago oportuno.")
                 .build();
         configuracionRepository.save(config);
