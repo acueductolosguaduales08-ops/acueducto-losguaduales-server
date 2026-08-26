@@ -19,4 +19,9 @@ public interface NotificacionLecturaRepository extends JpaRepository<Notificacio
     @Transactional
     @Query("DELETE FROM NotificacionLectura nl WHERE nl.notificacion.id = :notificacionId")
     int deleteByNotificacionId(@Param("notificacionId") Long notificacionId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM NotificacionLectura")
+    int deleteAllJPQL();
 }

@@ -321,6 +321,14 @@ public class NotificacionService {
         auditoriaService.registrar("ELIMINAR_NOTIFICACION", "NOTIFICACIONES", notificacion.getTitulo(), null);
     }
 
+    @Transactional
+    public int eliminarTodas() {
+        int lecturas = notificacionLecturaRepository.deleteAllJPQL();
+        int notificaciones = notificacionRepository.deleteAllJPQL();
+        auditoriaService.registrar("VACIAR_NOTIFICACIONES", "NOTIFICACIONES", "Se eliminaron " + notificaciones + " notificaciones", null);
+        return notificaciones;
+    }
+
     /** Elimina notificaciones vencidas (fechaVencimiento < ahora) y sus registros de lectura asociados. */
     @Transactional
     public int eliminarVencidas() {

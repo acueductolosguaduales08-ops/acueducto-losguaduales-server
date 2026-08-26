@@ -1,8 +1,10 @@
 package com.acueducto.backend.controller;
 
+import com.acueducto.backend.dto.request.ConfirmarPasswordRequest;
 import com.acueducto.backend.dto.request.NotificacionRequest;
 import com.acueducto.backend.dto.response.NotificacionResponse;
 import com.acueducto.backend.security.UserPrincipal;
+import com.acueducto.backend.service.AuthService;
 import com.acueducto.backend.service.NotificacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class NotificacionController {
 
     private final NotificacionService notificacionService;
+    private final AuthService authService;
 
     @Operation(summary = "Crear notificacion")
     @SecurityRequirement(name = "bearerAuth")
@@ -69,5 +72,15 @@ public class NotificacionController {
     @PostMapping("/aviso-tesorero")
     public ResponseEntity<NotificacionResponse> avisoTesorero(@Valid @RequestBody NotificacionRequest request, Authentication authentication) {
         return ResponseEntity.ok(notificacionService.notificarAvisoTesorero(request, authentication.getName()));
+    }
+
+    @Operation(summary = "Vaciar todas las notificaciones", description = "Elimina todas las notificaciones y registros de lectura. Requiere contraseña del administrador.")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @DeleteMapping("/todas")
+    public ResponseEntity<Void> eliminarTodas(Authentication authentication, @Valid @RequestBody ConfirmarPasswordRequest request) {
+        authService.verificarPassword(authentication.getName(), request.password());
+        int eliminadas = notificacionService.eliminarTodas();
+        return ResponseEntity.noContent().build();
     }
 }

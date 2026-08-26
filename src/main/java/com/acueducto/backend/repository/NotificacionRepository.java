@@ -24,4 +24,9 @@ public interface NotificacionRepository extends JpaRepository<Notificacion, Long
     @Transactional
     @Query("DELETE FROM Notificacion n WHERE n.fechaVencimiento IS NOT NULL AND n.fechaVencimiento < :ahora")
     int deleteVencidas(@Param("ahora") LocalDateTime ahora);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Notificacion")
+    int deleteAllJPQL();
 }
