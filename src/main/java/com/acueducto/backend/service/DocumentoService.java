@@ -141,6 +141,7 @@ public class DocumentoService {
         Configuracion config = configuracionService.obtenerEntidad();
         Context context = new Context();
         context.setVariable("multa", multa);
+        context.setVariable("numeroMulta", com.acueducto.backend.util.NumeracionUtil.formatearMulta(multa.getId()));
         context.setVariable("asociado", multa.getAsociado());
         context.setVariable("config", config);
         agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO, LOGO_CAJA_ALTO, true);

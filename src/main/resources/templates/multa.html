@@ -85,7 +85,7 @@
         <div class="linea-aviso"></div>
         <div class="titulo">
             <h2>COMPROBANTE DE MULTA</h2>
-            <div class="numero-documento" th:text="'MULTA-' + ${#strings.padLeft(T(String).valueOf(multa.id), 6, '0')}">MULTA-000001</div>
+            <div class="numero-documento" th:text="${numeroMulta}">MULTA-000001</div>
             <span th:class="'estado estado-' + ${multa.estado}" th:text="${multa.estado}">PENDIENTE</span>
         </div>
         <div class="seccion">

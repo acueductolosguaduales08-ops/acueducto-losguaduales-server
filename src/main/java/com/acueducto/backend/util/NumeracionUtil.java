@@ -33,4 +33,8 @@ public final class NumeracionUtil {
     public static String formatearNotaCredito(long numero) {
         return "NC-" + String.format("%06d", numero);
     }
+
+    public static String formatearMulta(long numero) {
+        return "MULTA-" + String.format("%06d", numero);
+    }
 }
