@@ -23,11 +23,9 @@
         .factura {
             position: relative;
             width: 297mm;
-            height: 210mm;
-            overflow: hidden;
+            min-height: 210mm;
             margin: 20px auto;
             background: #ffffff;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
         }
 
         /* ================================
@@ -232,6 +230,10 @@
             font-size: 9.5px;
         }
 
+        .detalle tr {
+            page-break-inside: avoid;
+        }
+
         .detalle tr:nth-child(even) {
             background-color: #fafafa;
         }
@@ -281,7 +283,7 @@
                 margin: 0;
                 box-shadow: none;
                 width: 297mm;
-                height: 210mm;
+                min-height: 210mm;
             }
         }
     </style>
