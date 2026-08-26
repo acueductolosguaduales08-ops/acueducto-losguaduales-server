@@ -1,11 +1,13 @@
 package com.acueducto.backend.controller;
 
+import com.acueducto.backend.dto.response.LecturaResponse;
 import com.acueducto.backend.dto.response.MovimientoTesoreriaResponse;
 import com.acueducto.backend.dto.response.MultaResponse;
 import com.acueducto.backend.dto.response.ReciboResponse;
 import com.acueducto.backend.entity.Recibo;
 import com.acueducto.backend.security.UserPrincipal;
 import com.acueducto.backend.service.DocumentoService;
+import com.acueducto.backend.service.LecturaService;
 import com.acueducto.backend.service.TesoreriaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -36,6 +38,14 @@ public class AsociadoFinanzasController {
 
     private final TesoreriaService tesoreriaService;
     private final DocumentoService documentoService;
+    private final LecturaService lecturaService;
+
+    @Operation(summary = "Mi consumo de agua", description = "Historial de lecturas y consumo del asociado autenticado.")
+    @GetMapping("/consumo")
+    public ResponseEntity<List<LecturaResponse>> listarMiConsumo(@AuthenticationPrincipal UserPrincipal principal) {
+        Long asociadoId = principal.getUsuario().getAsociado().getId();
+        return ResponseEntity.ok(lecturaService.historialPorAsociado(asociadoId));
+    }
 
     @Operation(summary = "Mis multas")
     @GetMapping("/multas")

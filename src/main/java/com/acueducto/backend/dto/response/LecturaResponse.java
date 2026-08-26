@@ -19,6 +19,8 @@ public class LecturaResponse {
     private Long medidorId;
     private String numeroMedidor;
     private Long mesContableId;
+    private String nombreMes;
+    private Integer anioContable;
     private LocalDate fechaLectura;
     private Integer lecturaAnterior;
     private Integer lecturaActual;
@@ -33,6 +35,8 @@ public class LecturaResponse {
                 .medidorId(l.getMedidor().getId())
                 .numeroMedidor(l.getMedidor().getNumero())
                 .mesContableId(l.getMesContable().getId())
+                .nombreMes(l.getMesContable().getNombreMes())
+                .anioContable(l.getMesContable().getAnioContable().getAnio())
                 .fechaLectura(l.getFechaLectura())
                 .lecturaAnterior(l.getLecturaAnterior())
                 .lecturaActual(l.getLecturaActual())
