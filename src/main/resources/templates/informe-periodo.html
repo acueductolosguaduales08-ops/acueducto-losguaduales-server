@@ -23,7 +23,8 @@
         .factura {
             position: relative;
             width: 210mm;
-            min-height: 297mm;
+            height: 297mm;
+            overflow: hidden;
             margin: 20px auto;
             background: #ffffff;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
@@ -77,7 +78,7 @@
             width: 166mm;
             margin: 0 auto;
             padding-top: 18mm;
-            padding-bottom: 38mm;
+            padding-bottom: 30mm;
         }
 
         /* ================================
@@ -164,6 +165,7 @@
 
         .seccion {
             margin-top: 2mm;
+            page-break-inside: avoid;
         }
 
         .seccion-titulo {
@@ -280,6 +282,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 4mm;
+            page-break-inside: avoid;
         }
 
         table.firmas td {
