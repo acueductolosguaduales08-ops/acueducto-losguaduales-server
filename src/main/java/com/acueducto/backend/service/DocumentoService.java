@@ -5,6 +5,7 @@ import com.acueducto.backend.dto.response.InformeListadoAsociadosResponse;
 import com.acueducto.backend.dto.response.InformePeriodoResponse;
 import com.acueducto.backend.entity.Configuracion;
 import com.acueducto.backend.entity.Factura;
+import com.acueducto.backend.entity.Multa;
 import com.acueducto.backend.entity.Recibo;
 import com.acueducto.backend.entity.enums.TipoArchivoInstitucional;
 import com.acueducto.backend.service.ConfiguracionService.ImagenDocumento;
@@ -76,6 +77,14 @@ public class DocumentoService {
         return pdfGeneratorService.generarPdf("informe-listado-asociados", construirContextoListadoAsociados(informe));
     }
 
+    public String renderizarMultaHtml(Multa multa) {
+        return pdfGeneratorService.renderizarHtml("multa", construirContextoMulta(multa));
+    }
+
+    public byte[] generarMultaPdf(Multa multa) {
+        return pdfGeneratorService.generarPdf("multa", construirContextoMulta(multa));
+    }
+
     private Context construirContextoFactura(Factura factura) {
         Configuracion config = configuracionService.obtenerEntidad();
         Context context = new Context();
@@ -125,6 +134,16 @@ public class DocumentoService {
         context.setVariable("config", config);
         // Solo el logo institucional: este documento NO lleva firma ni sello.
         agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO, LOGO_CAJA_ALTO, false);
+        return context;
+    }
+
+    private Context construirContextoMulta(Multa multa) {
+        Configuracion config = configuracionService.obtenerEntidad();
+        Context context = new Context();
+        context.setVariable("multa", multa);
+        context.setVariable("asociado", multa.getAsociado());
+        context.setVariable("config", config);
+        agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO, LOGO_CAJA_ALTO, true);
         return context;
     }
 
