@@ -8,10 +8,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @Tag(name = "08b. Multa Documento", description = "Vista previa HTML y descarga PDF de comprobantes de multa")
 @RestController
 @RequestMapping("/api/v1/multas")
@@ -28,7 +30,15 @@ public class MultaController {
     public ResponseEntity<String> verMultaHtml(@PathVariable Long id) {
         Multa multa = multaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada: " + id));
-        return ResponseEntity.ok(documentoService.renderizarMultaHtml(multa));
+        try {
+            String html = documentoService.renderizarMultaHtml(multa);
+            return ResponseEntity.ok(html);
+        } catch (Exception ex) {
+            log.error("Error renderizando HTML de multa {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.internalServerError()
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .body("{\"error\":\"" + ex.getClass().getSimpleName() + "\",\"mensaje\":\"" + ex.getMessage() + "\"}");
+        }
     }
 
     @Operation(summary = "Descargar multa en PDF", description = "Genera y descarga el comprobante de multa en formato PDF.")
@@ -37,11 +47,18 @@ public class MultaController {
     public ResponseEntity<byte[]> descargarMultaPdf(@PathVariable Long id) {
         Multa multa = multaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada: " + id));
-        byte[] pdf = documentoService.generarMultaPdf(multa);
-        String nombreArchivo = "Multa-" + String.format("%06d", id) + ".pdf";
-        return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
-                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
-                .body(pdf);
+        try {
+            byte[] pdf = documentoService.generarMultaPdf(multa);
+            String nombreArchivo = "Multa-" + String.format("%06d", id) + ".pdf";
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                    .body(pdf);
+        } catch (Exception ex) {
+            log.error("Error generando PDF de multa {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.internalServerError()
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .body(("{\"error\":\"" + ex.getClass().getSimpleName() + "\",\"mensaje\":\"" + ex.getMessage() + "\"}").getBytes());
+        }
     }
 }
