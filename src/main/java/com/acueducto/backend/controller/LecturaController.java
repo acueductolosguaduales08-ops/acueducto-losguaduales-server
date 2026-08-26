@@ -60,4 +60,10 @@ public class LecturaController {
     public ResponseEntity<List<LecturaResponse>> porMes(@PathVariable Long mesContableId) {
         return ResponseEntity.ok(lecturaService.porMes(mesContableId));
     }
+
+    @Operation(summary = "Listar todas las lecturas", description = "Listado global para gestion de datos importantes.")
+    @GetMapping
+    public ResponseEntity<List<LecturaResponse>> listarTodas() {
+        return ResponseEntity.ok(lecturaService.listarTodas());
+    }
 }

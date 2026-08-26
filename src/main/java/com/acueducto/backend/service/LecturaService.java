@@ -156,4 +156,9 @@ public class LecturaService {
         return lecturaRepository.findByMesContableId(mesContableId).stream()
                 .map(LecturaResponse::fromEntity).toList();
     }
+
+    public List<LecturaResponse> listarTodas() {
+        return lecturaRepository.findAll().stream()
+                .map(LecturaResponse::fromEntity).toList();
+    }
 }
