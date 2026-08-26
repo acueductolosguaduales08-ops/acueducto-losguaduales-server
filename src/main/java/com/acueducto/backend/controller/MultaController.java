@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "08b. Multa Documento", description = "Vista previa HTML y descarga PDF de comprobantes de multa")
@@ -23,6 +24,7 @@ public class MultaController {
 
     @Operation(summary = "Ver multa en HTML", description = "Renderiza la multa en formato HTML para vista previa en navegador.")
     @GetMapping(value = "/{id}/html", produces = "text/html")
+    @Transactional(readOnly = true)
     public ResponseEntity<String> verMultaHtml(@PathVariable Long id) {
         Multa multa = multaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada: " + id));
@@ -31,6 +33,7 @@ public class MultaController {
 
     @Operation(summary = "Descargar multa en PDF", description = "Genera y descarga el comprobante de multa en formato PDF.")
     @GetMapping(value = "/{id}/pdf", produces = "application/pdf")
+    @Transactional(readOnly = true)
     public ResponseEntity<byte[]> descargarMultaPdf(@PathVariable Long id) {
         Multa multa = multaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada: " + id));
