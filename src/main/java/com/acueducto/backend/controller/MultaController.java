@@ -1,6 +1,7 @@
 package com.acueducto.backend.controller;
 
 import com.acueducto.backend.entity.Multa;
+import com.acueducto.backend.exception.RecursoNoEncontradoException;
 import com.acueducto.backend.repository.MultaRepository;
 import com.acueducto.backend.service.DocumentoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +25,7 @@ public class MultaController {
     @GetMapping(value = "/{id}/html", produces = "text/html")
     public ResponseEntity<String> verMultaHtml(@PathVariable Long id) {
         Multa multa = multaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Multa no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada: " + id));
         return ResponseEntity.ok(documentoService.renderizarMultaHtml(multa));
     }
 
@@ -32,7 +33,7 @@ public class MultaController {
     @GetMapping(value = "/{id}/pdf", produces = "application/pdf")
     public ResponseEntity<byte[]> descargarMultaPdf(@PathVariable Long id) {
         Multa multa = multaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Multa no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Multa no encontrada: " + id));
         byte[] pdf = documentoService.generarMultaPdf(multa);
         String nombreArchivo = "Multa-" + String.format("%06d", id) + ".pdf";
         return ResponseEntity.ok()
