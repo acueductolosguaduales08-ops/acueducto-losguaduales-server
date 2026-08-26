@@ -60,7 +60,7 @@ public class EncuestaService {
             }
         }
 
-        String codigo = NumeracionUtil.formatearFormulario(encuestaRepository.count() + 1);
+        String codigo = NumeracionUtil.formatearFormulario(encuestaRepository.findMaxNumeroCodigo().orElse(0L) + 1);
 
         // "publico" controla el arranque: si no tiene programacion (fechaInicio), un formulario
         // publico se activa de inmediato al crearse en vez de quedar en borrador. Si SI tiene

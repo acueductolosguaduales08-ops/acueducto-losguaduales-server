@@ -101,7 +101,7 @@ public class TesoreriaService {
                 factura.getAsociado(), factura, null, factura.getMesContable(), tesorero, null);
 
         // 6: generar automaticamente el recibo
-        long consecutivoRecibo = configuracionService.siguienteNumeroRecibo();
+        long consecutivoRecibo = reciboRepository.findMaxNumeroRecibo().orElse(0L) + 1;
         String numeroRecibo = NumeracionUtil.formatearRecibo(consecutivoRecibo);
 
         Recibo recibo = Recibo.builder()
@@ -222,7 +222,7 @@ public class TesoreriaService {
         pago = pagoRepository.save(pago);
 
         // 3: generar recibo
-        long consecutivoRecibo = configuracionService.siguienteNumeroRecibo();
+        long consecutivoRecibo = reciboRepository.findMaxNumeroRecibo().orElse(0L) + 1;
         String numeroRecibo = NumeracionUtil.formatearRecibo(consecutivoRecibo);
 
         Recibo recibo = Recibo.builder()

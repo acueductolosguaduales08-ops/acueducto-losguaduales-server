@@ -102,7 +102,7 @@ public class FacturaService {
 
         BigDecimal total = valorConsumo.add(cargoAdministracion).add(totalMultas);
 
-        long consecutivo = configuracionService.siguienteNumeroFactura();
+        long consecutivo = facturaRepository.findMaxNumeroFactura().orElse(0L) + 1;
         String numeroFactura = NumeracionUtil.formatearFactura(consecutivo);
 
         Factura factura = Factura.builder()

@@ -26,7 +26,6 @@ public class NotaCreditoService {
     private final NotaCreditoRepository notaCreditoRepository;
     private final AsociadoRepository asociadoRepository;
     private final FacturaRepository facturaRepository;
-    private final ConfiguracionRepository configuracionRepository;
     private final AuditoriaService auditoriaService;
 
     @Transactional
@@ -43,12 +42,7 @@ public class NotaCreditoService {
             }
         }
 
-        Configuracion config = configuracionRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new RecursoNoEncontradoException("Configuracion no encontrada"));
-
-        String numeroNota = NumeracionUtil.formatearNotaCredito(config.getSiguienteNumeroNotaCredito());
-        config.setSiguienteNumeroNotaCredito(config.getSiguienteNumeroNotaCredito() + 1);
-        configuracionRepository.save(config);
+        String numeroNota = NumeracionUtil.formatearNotaCredito(notaCreditoRepository.findMaxNumeroNota().orElse(0L) + 1);
 
         NotaCredito nc = NotaCredito.builder()
                 .numeroNota(numeroNota)

@@ -5,6 +5,7 @@ import com.acueducto.backend.entity.enums.EstadoFactura;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,4 +20,7 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     List<Factura> findByEstadoAndFechaLimitePagoBefore(EstadoFactura estado, java.time.LocalDate fecha);
     List<Factura> findByEstadoAndFechaLimitePagoBetween(EstadoFactura estado, java.time.LocalDate desde, java.time.LocalDate hasta);
     Optional<Factura> findByLecturaId(Long lecturaId);
+
+    @Query(value = "SELECT CAST(SUBSTRING(numero_factura FROM 5) AS BIGINT) FROM factura ORDER BY CAST(SUBSTRING(numero_factura FROM 5) AS BIGINT) DESC LIMIT 1", nativeQuery = true)
+    Optional<Long> findMaxNumeroFactura();
 }
