@@ -40,6 +40,7 @@
             width: 190mm;
             height: 40mm;
             z-index: 0;
+            overflow: hidden;
         }
 
         .onda-superior img {
@@ -51,6 +52,23 @@
         /* ================================
            ONDA AZUL INFERIOR
         ================================= */
+
+        .onda-inferior {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 190mm;
+            height: 40mm;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .onda-inferior img {
+            display: block;
+            width: 190mm;
+            height: 60mm;
+            margin-top: -20mm;
+        }
 
         /* ================================
            CONTENIDO
@@ -659,6 +677,11 @@
             <p>Documento generado electronicamente por el Sistema Integral de Gestion del Acueducto Los Guaduales.</p>
         </div>
 
+    </div>
+
+    <!-- ONDA AZUL INFERIOR -->
+    <div class="onda-inferior">
+        <img src="data:image/png;base64,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... (line truncated to 2000 chars)
     </div>
 
 </div>
