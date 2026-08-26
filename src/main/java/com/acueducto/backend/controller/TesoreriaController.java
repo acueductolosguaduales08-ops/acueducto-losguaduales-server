@@ -6,10 +6,7 @@ import com.acueducto.backend.dto.request.MultaRequest;
 import com.acueducto.backend.dto.request.PagarMultaRequest;
 import com.acueducto.backend.dto.request.RegistrarPagoRequest;
 import com.acueducto.backend.dto.response.*;
-import com.acueducto.backend.entity.Multa;
 import com.acueducto.backend.entity.enums.TipoMovimiento;
-import com.acueducto.backend.repository.MultaRepository;
-import com.acueducto.backend.service.DocumentoService;
 import com.acueducto.backend.service.TesoreriaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -33,8 +30,6 @@ import java.util.List;
 public class TesoreriaController {
 
     private final TesoreriaService tesoreriaService;
-    private final DocumentoService documentoService;
-    private final MultaRepository multaRepository;
 
     @Operation(summary = "Registrar pago de factura", description = "Operacion atomica: actualiza la factura, crea el movimiento, genera el recibo y notifica al asociado (8.5).")
     @PostMapping("/pagos")
@@ -75,29 +70,6 @@ public class TesoreriaController {
     @PatchMapping("/multas/{id}")
     public ResponseEntity<MultaResponse> editarValorMulta(@PathVariable Long id, @Valid @RequestBody EditarValorMultaRequest request) {
         return ResponseEntity.ok(tesoreriaService.editarValorMulta(id, request));
-    }
-
-    @Operation(summary = "Ver multa en HTML", description = "Renderiza la multa en formato HTML para vista previa en navegador.")
-    @GetMapping(value = "/multas/{id}/html", produces = "text/html")
-    @PreAuthorize("hasAnyRole('ASOCIADO', 'ADMINISTRADOR', 'TESORERO')")
-    public ResponseEntity<String> verMultaHtml(@PathVariable Long id) {
-        Multa multa = multaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Multa no encontrada: " + id));
-        return ResponseEntity.ok(documentoService.renderizarMultaHtml(multa));
-    }
-
-    @Operation(summary = "Descargar multa en PDF", description = "Genera y descarga el comprobante de multa en formato PDF.")
-    @GetMapping(value = "/multas/{id}/pdf", produces = "application/pdf")
-    @PreAuthorize("hasAnyRole('ASOCIADO', 'ADMINISTRADOR', 'TESORERO')")
-    public ResponseEntity<byte[]> descargarMultaPdf(@PathVariable Long id) {
-        Multa multa = multaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Multa no encontrada: " + id));
-        byte[] pdf = documentoService.generarMultaPdf(multa);
-        String nombreArchivo = "Multa-" + String.format("%06d", id) + ".pdf";
-        return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
-                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
-                .body(pdf);
     }
 
     @Operation(summary = "Registrar ingreso extraordinario", description = "Donaciones, reconexiones, nuevas afiliaciones, otros ingresos (8.4).")
