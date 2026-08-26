@@ -132,4 +132,32 @@ public class GestionDatosImportantesController {
         service.eliminarNotificacion(id, auth.getName(), request.password());
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Reiniciar numeracion de facturas", description = "Pone el contador de facturas en 1. Solo funciona si no hay facturas existentes.")
+    @PostMapping("/numeracion/facturas")
+    public ResponseEntity<Void> reiniciarNumeracionFacturas(Authentication auth, @Valid @RequestBody ConfirmarPasswordRequest request) {
+        service.reiniciarNumeracionFacturas(auth.getName(), request.password());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Reiniciar numeracion de recibos", description = "Pone el contador de recibos en 1. Solo funciona si no hay recibos existentes.")
+    @PostMapping("/numeracion/recibos")
+    public ResponseEntity<Void> reiniciarNumeracionRecibos(Authentication auth, @Valid @RequestBody ConfirmarPasswordRequest request) {
+        service.reiniciarNumeracionRecibos(auth.getName(), request.password());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Reiniciar numeracion de notas de credito", description = "Pone el contador de notas de credito en 1. Solo funciona si no hay notas existentes.")
+    @PostMapping("/numeracion/notas-credito")
+    public ResponseEntity<Void> reiniciarNumeracionNotasCredito(Authentication auth, @Valid @RequestBody ConfirmarPasswordRequest request) {
+        service.reiniciarNumeracionNotasCredito(auth.getName(), request.password());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Reiniciar numeracion de formularios", description = "Pone el contador de formularios en 1. Solo funciona si no hay formularios existentes.")
+    @PostMapping("/numeracion/formularios")
+    public ResponseEntity<Void> reiniciarNumeracionFormularios(Authentication auth, @Valid @RequestBody ConfirmarPasswordRequest request) {
+        service.reiniciarNumeracionFormularios(auth.getName(), request.password());
+        return ResponseEntity.noContent().build();
+    }
 }

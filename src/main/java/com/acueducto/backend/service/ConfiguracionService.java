@@ -140,6 +140,38 @@ public class ConfiguracionService {
         return numero;
     }
 
+    /** Reinicia la numeracion de facturas a 1. Solo usar cuando no hay facturas existentes. */
+    @Transactional
+    public void reiniciarNumeracionFacturas() {
+        Configuracion config = obtenerEntidad();
+        config.setSiguienteNumeroFactura(1L);
+        configuracionRepository.save(config);
+    }
+
+    /** Reinicia la numeracion de recibos a 1. Solo usar cuando no hay recibos existentes. */
+    @Transactional
+    public void reiniciarNumeracionRecibos() {
+        Configuracion config = obtenerEntidad();
+        config.setSiguienteNumeroRecibo(1L);
+        configuracionRepository.save(config);
+    }
+
+    /** Reinicia la numeracion de notas de credito a 1. Solo usar cuando no hay notas existentes. */
+    @Transactional
+    public void reiniciarNumeracionNotasCredito() {
+        Configuracion config = obtenerEntidad();
+        config.setSiguienteNumeroNotaCredito(1L);
+        configuracionRepository.save(config);
+    }
+
+    /** Reinicia la numeracion de formularios (encuestas) a 1. Solo usar cuando no hay formularios existentes. */
+    @Transactional
+    public void reiniciarNumeracionFormularios() {
+        Configuracion config = obtenerEntidad();
+        config.setSiguienteNumeroFormulario(1L);
+        configuracionRepository.save(config);
+    }
+
     // ---- Metodos de pago ----
 
     @Transactional

@@ -58,6 +58,8 @@ public class GestionDatosImportantesService {
     private final MensajeRepository mensajeRepository;
     private final SolicitudEliminacionRepository solicitudEliminacionRepository;
     private final SupabaseStorageService supabaseStorageService;
+    private final ConfiguracionService configuracionService;
+    private final NotaCreditoRepository notaCreditoRepository;
 
     // =============================== FORMULARIOS ===============================
 
@@ -663,5 +665,47 @@ public class GestionDatosImportantesService {
                 "Se borrara la notificacion junto con sus registros de lectura.");
         r.getCascada().put("registrosLectura", (long) notificacionLecturaRepository.findByNotificacionId(id).size());
         return r;
+    }
+
+    // =============================== REINICIO DE NUMERACION ===============================
+
+    @Transactional
+    public void reiniciarNumeracionFacturas(String usernameAdmin, String password) {
+        authService.verificarPassword(usernameAdmin, password);
+        if (facturaRepository.count() > 0) {
+            throw new ReglaNegocioException("No se puede reiniciar la numeracion porque aun existen facturas. Elimine todas primero.");
+        }
+        configuracionService.reiniciarNumeracionFacturas();
+        auditoriaService.registrar("REINICIAR_NUMERACION_FACTURAS", "DATOS_IMPORTANTES", "facturas", "Contador reiniciado a 1");
+    }
+
+    @Transactional
+    public void reiniciarNumeracionRecibos(String usernameAdmin, String password) {
+        authService.verificarPassword(usernameAdmin, password);
+        if (reciboRepository.count() > 0) {
+            throw new ReglaNegocioException("No se puede reiniciar la numeracion porque aun existen recibos. Elimine todos primero.");
+        }
+        configuracionService.reiniciarNumeracionRecibos();
+        auditoriaService.registrar("REINICIAR_NUMERACION_RECIBOS", "DATOS_IMPORTANTES", "recibos", "Contador reiniciado a 1");
+    }
+
+    @Transactional
+    public void reiniciarNumeracionNotasCredito(String usernameAdmin, String password) {
+        authService.verificarPassword(usernameAdmin, password);
+        if (notaCreditoRepository.count() > 0) {
+            throw new ReglaNegocioException("No se puede reiniciar la numeracion porque aun existen notas de credito. Elimine todas primero.");
+        }
+        configuracionService.reiniciarNumeracionNotasCredito();
+        auditoriaService.registrar("REINICIAR_NUMERACION_NOTAS_CREDITO", "DATOS_IMPORTANTES", "notas_credito", "Contador reiniciado a 1");
+    }
+
+    @Transactional
+    public void reiniciarNumeracionFormularios(String usernameAdmin, String password) {
+        authService.verificarPassword(usernameAdmin, password);
+        if (encuestaRepository.count() > 0) {
+            throw new ReglaNegocioException("No se puede reiniciar la numeracion porque aun existen formularios. Elimine todos primero.");
+        }
+        configuracionService.reiniciarNumeracionFormularios();
+        auditoriaService.registrar("REINICIAR_NUMERACION_FORMULARIOS", "DATOS_IMPORTANTES", "formularios", "Contador reiniciado a 1");
     }
 }
