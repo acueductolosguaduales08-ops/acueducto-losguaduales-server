@@ -30,7 +30,9 @@ public class PdfGeneratorService {
         try {
             String limpio = html
                 .replaceAll("(?s)^\\s*<\\?xml[^?]*\\?>\\s*", "")
-                .replaceFirst("(?s)^\\uFEFF", "");
+                .replaceAll("(?si)<!DOCTYPE[^>]*>\\s*", "")
+                .replaceFirst("(?s)^\\uFEFF", "")
+                .trim();
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ITextRenderer renderer = new ITextRenderer();
             renderer.setDocumentFromString(limpio);
