@@ -102,7 +102,7 @@ public class Configuracion extends BaseEntity {
     private Long siguienteNumeroNotaCredito = 1L;
 
     @Builder.Default
-    @Column(name = "siguiente_numero_formulario", nullable = false)
+    @Column(name = "siguiente_numero_formulario")
     private Long siguienteNumeroFormulario = 1L;
 
     @Column(name = "notas_factura", columnDefinition = "TEXT")
