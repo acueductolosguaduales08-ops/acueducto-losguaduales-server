@@ -41,31 +41,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String jwt = authHeader.substring(7);
-        final String username = jwtService.extractUsername(jwt);
+        try {
+            final String jwt = authHeader.substring(7);
+            final String username = jwtService.extractUsername(jwt);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(username).orElse(null);
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    Usuario usuario = usuarioRepository.findByUsernameIgnoreCase(username).orElse(null);
 
-                if (usuario != null && !usuario.isActivo() && usuario.getId() != 1L) {
-                    String motivo = usuario.getMotivoBloqueo() != null ? usuario.getMotivoBloqueo() : "";
-                    String mensaje = "Lo sentimos, tu cuenta ha sido bloqueada por uno de nuestros administradores."
-                            + (motivo.isEmpty() ? "" : " Asunto: " + motivo);
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("application/json");
-                    response.getWriter().write(objectMapper.writeValueAsString(
-                            Map.of("mensaje", mensaje, "motivoBloqueo", motivo)));
-                    return;
+                    if (usuario != null && !usuario.isActivo() && usuario.getId() != 1L) {
+                        String motivo = usuario.getMotivoBloqueo() != null ? usuario.getMotivoBloqueo() : "";
+                        String mensaje = "Lo sentimos, tu cuenta ha sido bloqueada por uno de nuestros administradores."
+                                + (motivo.isEmpty() ? "" : " Asunto: " + motivo);
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.getWriter().write(objectMapper.writeValueAsString(
+                                Map.of("mensaje", mensaje, "motivoBloqueo", motivo)));
+                        return;
+                    }
+
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
-
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
+        } catch (Exception e) {
+            // Token malformed, expired or invalid — let the request through without authentication.
+            // SecurityConfig permitAll() handles public endpoints; secured ones will get 401/403.
         }
         filterChain.doFilter(request, response);
     }

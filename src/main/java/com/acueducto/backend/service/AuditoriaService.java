@@ -34,16 +34,20 @@ public class AuditoriaService {
     }
 
     private void guardar(String accion, String modulo, String registroAfectado, String observaciones) {
-        Auditoria auditoria = Auditoria.builder()
-                .usuario(usuarioActual())
-                .fecha(LocalDateTime.now())
-                .accion(accion)
-                .modulo(modulo)
-                .registroAfectado(registroAfectado)
-                .ip(ipActual())
-                .observaciones(observaciones)
-                .build();
-        auditoriaRepository.save(auditoria);
+        try {
+            Auditoria auditoria = Auditoria.builder()
+                    .usuario(usuarioActual())
+                    .fecha(LocalDateTime.now())
+                    .accion(accion)
+                    .modulo(modulo)
+                    .registroAfectado(registroAfectado)
+                    .ip(ipActual())
+                    .observaciones(observaciones)
+                    .build();
+            auditoriaRepository.save(auditoria);
+        } catch (Exception e) {
+            // Si la tabla auditoria tiene problemas de esquema, no bloquear la operacion principal
+        }
     }
 
     private boolean auditoriaActiva() {
