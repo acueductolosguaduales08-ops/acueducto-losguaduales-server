@@ -28,9 +28,12 @@ public class PdfGeneratorService {
     /** Convierte el HTML ya renderizado a bytes PDF. */
     public byte[] generarPdfDesdeHtml(String html) {
         try {
+            String limpio = html
+                .replaceAll("(?s)^\\s*<\\?xml[^?]*\\?>\\s*", "")
+                .replaceFirst("(?s)^\\uFEFF", "");
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ITextRenderer renderer = new ITextRenderer();
-            renderer.setDocumentFromString(html);
+            renderer.setDocumentFromString(limpio);
             renderer.layout();
             renderer.createPDF(outputStream);
             return outputStream.toByteArray();
