@@ -50,6 +50,12 @@ public class TesoreriaController {
         return ResponseEntity.ok(tesoreriaService.listarTodasLasMultas());
     }
 
+    @Operation(summary = "Estadisticas de multas", description = "Totales, pendientes, pagadas, anuladas y valor total pendiente.")
+    @GetMapping("/multas/estadisticas")
+    public ResponseEntity<MultaEstadisticasResponse> estadisticasMultas() {
+        return ResponseEntity.ok(tesoreriaService.estadisticasMultas());
+    }
+
     @Operation(summary = "Listar multas de un asociado")
     @GetMapping("/multas/asociado/{asociadoId}")
     public ResponseEntity<List<MultaResponse>> listarMultas(@PathVariable Long asociadoId) {

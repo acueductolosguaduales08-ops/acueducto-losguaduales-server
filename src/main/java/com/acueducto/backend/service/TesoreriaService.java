@@ -445,6 +445,20 @@ public class TesoreriaService {
         return multaRepository.findByAsociadoId(asociadoId).stream().map(MultaResponse::fromEntity).toList();
     }
 
+    @Transactional(readOnly = true)
+    public MultaEstadisticasResponse estadisticasMultas() {
+        long pendientes = multaRepository.countByEstado(EstadoMulta.PENDIENTE);
+        long pagadas = multaRepository.countByEstado(EstadoMulta.PAGADA);
+        long anuladas = multaRepository.countByEstado(EstadoMulta.ANULADA);
+        return MultaEstadisticasResponse.builder()
+                .totalMultas(pendientes + pagadas + anuladas)
+                .pendientes(pendientes)
+                .pagadas(pagadas)
+                .anuladas(anuladas)
+                .totalValorPendiente(multaRepository.sumValorPendiente())
+                .build();
+    }
+
     public List<MovimientoTesoreriaResponse> listarMovimientosPorAsociado(Long asociadoId) {
         return movimientoTesoreriaRepository.findByAsociadoId(asociadoId).stream()
                 .sorted((a, b) -> b.getFecha().compareTo(a.getFecha()))
