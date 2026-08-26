@@ -54,6 +54,13 @@ public class PeriodoContableController {
         return ResponseEntity.ok(periodoContableService.listarMesesPorAnio(anioId));
     }
 
+    @Operation(summary = "Obtener un mes por ID")
+    @PreAuthorize("hasRole('ADMINISTRADOR') or hasRole('TESORERO')")
+    @GetMapping("/meses/{mesId}")
+    public ResponseEntity<MesContableResponse> obtenerMes(@PathVariable Long mesId) {
+        return ResponseEntity.ok(periodoContableService.obtenerMes(mesId));
+    }
+
     @Operation(summary = "Cerrar periodo", description = "Verifica que todas las lecturas y facturas esten completas antes de cerrar (9.8).")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @PostMapping("/meses/{mesId}/cerrar")

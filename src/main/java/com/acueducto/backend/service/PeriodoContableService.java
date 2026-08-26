@@ -123,6 +123,11 @@ public class PeriodoContableService {
                 .map(MesContableResponse::fromEntity).toList();
     }
 
+    public MesContableResponse obtenerMes(Long id) {
+        MesContable mes = obtenerMesEntidad(id);
+        return MesContableResponse.fromEntity(mes);
+    }
+
     public MesContable obtenerMesEntidad(Long id) {
         return mesContableRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mes contable no encontrado con id " + id));
