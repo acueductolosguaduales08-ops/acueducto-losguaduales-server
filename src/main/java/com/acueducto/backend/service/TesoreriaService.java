@@ -431,8 +431,11 @@ public class TesoreriaService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public Recibo obtenerReciboPorNumero(String numeroRecibo) {
-        return reciboRepository.findByNumeroRecibo(numeroRecibo)
+        // Intenta fetch con JOIN FETCH para evitar LazyInitializationException al generar PDF
+        return reciboRepository.findByNumeroReciboWithDetails(numeroRecibo)
+                .or(() -> reciboRepository.findByNumeroRecibo(numeroRecibo))
                 .orElseThrow(() -> new RecursoNoEncontradoException("Recibo no encontrado: " + numeroRecibo));
     }
 

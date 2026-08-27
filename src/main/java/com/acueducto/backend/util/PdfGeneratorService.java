@@ -25,6 +25,8 @@ public class PdfGeneratorService {
         return templateEngine.process(nombrePlantilla, context);
     }
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PdfGeneratorService.class);
+
     /** Convierte el HTML ya renderizado a bytes PDF. */
     public byte[] generarPdfDesdeHtml(String html) {
         try {
@@ -40,7 +42,11 @@ public class PdfGeneratorService {
             renderer.createPDF(outputStream);
             return outputStream.toByteArray();
         } catch (Exception e) {
-            throw new RuntimeException("No fue posible generar el PDF", e);
+            log.error("Error generando PDF, html length {}: {}", html != null ? html.length() : 0, e.getMessage(), e);
+            // Incluye html parcial para debug en Render
+            String snippet = html != null && html.length() > 2000 ? html.substring(0, 2000) : html;
+            log.error("HTML snippet: {}", snippet);
+            throw new RuntimeException("No fue posible generar el PDF: " + e.getMessage(), e);
         }
     }
 

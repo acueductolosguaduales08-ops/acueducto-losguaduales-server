@@ -37,6 +37,7 @@ public class DocumentoService {
 
     private final PdfGeneratorService pdfGeneratorService;
     private final ConfiguracionService configuracionService;
+    private final com.acueducto.backend.repository.ReciboRepository reciboRepository;
 
     @Transactional(readOnly = true)
     public String renderizarFacturaHtml(Factura factura) {
@@ -110,13 +111,36 @@ public class DocumentoService {
     }
 
     private Context construirContextoRecibo(Recibo recibo) {
+        // Re-fetch con JOIN FETCH dentro de la transaccion para evitar LazyInitializationException en Render
+        Recibo r = recibo;
+        try {
+            if (recibo.getId() != null) {
+                r = reciboRepository.findByNumeroReciboWithDetails(recibo.getNumeroRecibo()).orElse(recibo);
+                // Forzar inicializacion de proxies aun con open-in-view
+                if (r.getPago() != null) {
+                    r.getPago().getMetodoPago();
+                    if (r.getPago().getTesorero() != null) r.getPago().getTesorero().getUsername();
+                }
+                if (r.getAsociado() != null) r.getAsociado().getNombres();
+                if (r.getFactura() != null) r.getFactura().getNumeroFactura();
+            }
+        } catch (Exception ignored) {
+            r = recibo;
+        }
         Configuracion config = configuracionService.obtenerEntidad();
         Context context = new Context();
-        context.setVariable("recibo", recibo);
-        context.setVariable("pago", recibo.getPago());
-        context.setVariable("factura", recibo.getFactura());
-        context.setVariable("esMultaIndependiente", recibo.getFactura() == null);
-        context.setVariable("asociado", recibo.getAsociado());
+        context.setVariable("recibo", r);
+        // Variables seguras para el template (evita NPE si algun recibo legacy tiene pago null)
+        Object pagoObj = null;
+        try { pagoObj = r.getPago(); } catch (Exception e) { pagoObj = null; }
+        Object facturaObj = null;
+        try { facturaObj = r.getFactura(); } catch (Exception e) { facturaObj = null; }
+        Object asociadoObj = null;
+        try { asociadoObj = r.getAsociado(); } catch (Exception e) { asociadoObj = null; }
+        context.setVariable("pago", pagoObj);
+        context.setVariable("factura", facturaObj);
+        context.setVariable("esMultaIndependiente", facturaObj == null);
+        context.setVariable("asociado", asociadoObj);
         context.setVariable("config", config);
         agregarImagenesInstitucionales(context, config, LOGO_CAJA_ANCHO_RECIBO, LOGO_CAJA_ALTO_RECIBO, true);
         return context;

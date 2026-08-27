@@ -11,6 +11,10 @@ import java.util.Optional;
 
 public interface ReciboRepository extends JpaRepository<Recibo, Long> {
     Optional<Recibo> findByNumeroRecibo(String numeroRecibo);
+
+    @org.springframework.data.jpa.repository.Query("SELECT r FROM Recibo r LEFT JOIN FETCH r.pago p LEFT JOIN FETCH p.metodoPago LEFT JOIN FETCH p.tesorero LEFT JOIN FETCH r.asociado LEFT JOIN FETCH r.factura WHERE r.numeroRecibo = :numero")
+    Optional<Recibo> findByNumeroReciboWithDetails(@org.springframework.data.repository.query.Param("numero") String numero);
+
     Optional<Recibo> findByPagoId(Long pagoId);
     Optional<Recibo> findByPagoMultaId(Long multaId);
     Page<Recibo> findByAsociadoId(Long asociadoId, Pageable pageable);
