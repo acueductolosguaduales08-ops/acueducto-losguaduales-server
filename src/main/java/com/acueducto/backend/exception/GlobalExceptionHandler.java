@@ -123,8 +123,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest req) {
         log.error("Error inesperado en {}: {}", req.getRequestURI(), ex.getMessage(), ex);
-        String detalles = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno", "Ocurrio un error inesperado. Intente nuevamente.", req, detalles != null ? List.of(detalles) : null);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno", "Ocurrio un error inesperado. Intente nuevamente.", req, null);
     }
 
     /** Un recurso estatico o ruta inexistente debe responder 404 (no 500), como espera el navegador. */
