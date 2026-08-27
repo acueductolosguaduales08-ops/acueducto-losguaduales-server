@@ -12,6 +12,7 @@ import com.acueducto.backend.service.ConfiguracionService.ImagenDocumento;
 import com.acueducto.backend.util.PdfGeneratorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 
 /**
@@ -37,50 +38,62 @@ public class DocumentoService {
     private final PdfGeneratorService pdfGeneratorService;
     private final ConfiguracionService configuracionService;
 
+    @Transactional(readOnly = true)
     public String renderizarFacturaHtml(Factura factura) {
         return pdfGeneratorService.renderizarHtml("factura", construirContextoFactura(factura));
     }
 
+    @Transactional(readOnly = true)
     public byte[] generarFacturaPdf(Factura factura) {
         return pdfGeneratorService.generarPdf("factura", construirContextoFactura(factura));
     }
 
+    @Transactional(readOnly = true)
     public String renderizarReciboHtml(Recibo recibo) {
         return pdfGeneratorService.renderizarHtml("recibo", construirContextoRecibo(recibo));
     }
 
+    @Transactional(readOnly = true)
     public byte[] generarReciboPdf(Recibo recibo) {
         return pdfGeneratorService.generarPdf("recibo", construirContextoRecibo(recibo));
     }
 
+    @Transactional(readOnly = true)
     public String renderizarInformePeriodoHtml(InformePeriodoResponse informe) {
         return pdfGeneratorService.renderizarHtml("informe-periodo", construirContextoInformePeriodo(informe));
     }
 
+    @Transactional(readOnly = true)
     public byte[] generarInformePeriodoPdf(InformePeriodoResponse informe) {
         return pdfGeneratorService.generarPdf("informe-periodo", construirContextoInformePeriodo(informe));
     }
 
+    @Transactional(readOnly = true)
     public String renderizarInformeAsociadoHtml(InformeAsociadoResponse informe) {
         return pdfGeneratorService.renderizarHtml("informe-asociado", construirContextoInformeAsociado(informe));
     }
 
+    @Transactional(readOnly = true)
     public byte[] generarInformeAsociadoPdf(InformeAsociadoResponse informe) {
         return pdfGeneratorService.generarPdf("informe-asociado", construirContextoInformeAsociado(informe));
     }
 
+    @Transactional(readOnly = true)
     public String renderizarListadoAsociadosHtml(InformeListadoAsociadosResponse informe) {
         return pdfGeneratorService.renderizarHtml("informe-listado-asociados", construirContextoListadoAsociados(informe));
     }
 
+    @Transactional(readOnly = true)
     public byte[] generarListadoAsociadosPdf(InformeListadoAsociadosResponse informe) {
         return pdfGeneratorService.generarPdf("informe-listado-asociados", construirContextoListadoAsociados(informe));
     }
 
+    @Transactional(readOnly = true)
     public String renderizarMultaHtml(Multa multa) {
         return pdfGeneratorService.renderizarHtml("multa", construirContextoMulta(multa));
     }
 
+    @Transactional(readOnly = true)
     public byte[] generarMultaPdf(Multa multa) {
         return pdfGeneratorService.generarPdf("multa", construirContextoMulta(multa));
     }
