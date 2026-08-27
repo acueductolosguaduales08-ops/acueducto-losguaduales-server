@@ -30,11 +30,22 @@ public class PdfGeneratorService {
     /** Convierte el HTML ya renderizado a bytes PDF. */
     public byte[] generarPdfDesdeHtml(String html) {
         try {
-            String limpio = html
-                .replaceAll("(?s)^\\s*<\\?xml[^?]*\\?>\\s*", "")
-                .replaceAll("(?si)<!DOCTYPE[^>]*>\\s*", "")
-                .replaceFirst("(?s)^\\uFEFF", "")
-                .trim();
+            String limpio = html;
+            if (limpio != null) {
+                // Elimina BOM y cualquier caracter antes del primer '<' (causa "Content is not allowed in prolog")
+                limpio = limpio.replaceFirst("^\uFEFF", "");
+                limpio = limpio.replaceFirst("^\uFEFF", "");
+                limpio = limpio.trim();
+                limpio = limpio.replaceAll("(?s)^\\s*<\\?xml[^?]*\\?>\\s*", "");
+                limpio = limpio.replaceAll("(?si)<!DOCTYPE[^>]*>\\s*", "");
+                limpio = limpio.replaceFirst("^\uFEFF", "");
+                // Fallback: si aún queda algo antes de '<', lo elimina (ej. '?' por BOM mal decodificado)
+                int idx = limpio.indexOf('<');
+                if (idx > 0) {
+                    limpio = limpio.substring(idx);
+                }
+                limpio = limpio.trim();
+            }
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ITextRenderer renderer = new ITextRenderer();
             renderer.setDocumentFromString(limpio);
