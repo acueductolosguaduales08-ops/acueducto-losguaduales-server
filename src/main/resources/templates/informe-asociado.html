@@ -402,15 +402,15 @@
             <table class="datos-tabla">
                 <tr>
                     <td class="etiqueta">Total facturado</td>
-                    <td th:text="'$' + ${informe.totalFacturado}"></td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(informe.totalFacturado)}"></td>
                     <td class="etiqueta">Total pagado</td>
-                    <td th:text="'$' + ${informe.totalPagado}"></td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(informe.totalPagado)}"></td>
                 </tr>
                 <tr>
                     <td class="etiqueta">Saldo pendiente</td>
-                    <td th:text="'$' + ${informe.totalPendiente}"></td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(informe.totalPendiente)}"></td>
                     <td class="etiqueta">Multas (<span th:text="${informe.numeroMultas}"></span>)</td>
-                    <td th:text="'$' + ${informe.totalMultas}"></td>
+                    <td th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(informe.totalMultas)}"></td>
                 </tr>
             </table>
         </div>
@@ -427,8 +427,8 @@
                     <td th:text="${f.numeroFactura}"></td>
                     <td th:text="${f.fechaEmision}"></td>
                     <td><span th:class="'estado-badge estado-' + ${f.estado}" th:text="${f.estado}"></span></td>
-                    <td style="text-align:right;" th:text="'$' + ${f.total}"></td>
-                    <td style="text-align:right;" th:text="'$' + ${f.saldoPendiente}"></td>
+                    <td style="text-align:right;" th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(f.total)}"></td>
+                    <td style="text-align:right;" th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(f.saldoPendiente)}"></td>
                 </tr>
                 </tbody>
             </table>
@@ -447,7 +447,7 @@
                     <td th:text="${p.numeroFactura}"></td>
                     <td th:text="${p.fecha}"></td>
                     <td th:text="${p.metodoPago}"></td>
-                    <td style="text-align:right;" th:text="'$' + ${p.valor}"></td>
+                    <td style="text-align:right;" th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(p.valor)}"></td>
                 </tr>
                 </tbody>
             </table>
@@ -465,7 +465,7 @@
                     <td th:text="${m.motivo}"></td>
                     <td th:text="${m.fecha}"></td>
                     <td th:text="${m.estado}"></td>
-                    <td style="text-align:right;" th:text="'$' + ${m.valor}"></td>
+                    <td style="text-align:right;" th:text="${T(com.acueducto.backend.util.FormatoMonedaUtil).formatearConSimbolo(m.valor)}"></td>
                 </tr>
                 </tbody>
             </table>
